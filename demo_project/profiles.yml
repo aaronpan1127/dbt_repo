@@ -4,6 +4,7 @@ demo_project:
       catalog: null
       host: adb-4492709390385172.12.azuredatabricks.net
       http_path: sql/protocolv1/o/4492709390385172/0307-035111-ovhp103l
+      token: "{{ env_var('DBT_ACCESS_TOKEN') }}"
       schema: default
       threads: 3
       type: databricks
