@@ -1,0 +1,6 @@
+demo_project:
+  outputs:
+    dev:
+      schema: default
+      threads: 3
+  target: dev
