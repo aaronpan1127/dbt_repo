@@ -62,4 +62,4 @@ snapshots:
 # Like the pre- and post- hooks above, the on-run-start and on-run-end configs
 # make it possible to run SQL at the very beginning, and very end of a dbt run.
 on-run-start:
-    - "create table if not exists audit (model text, state text, time timestamp)"
+    - "create table if not exists audit (model string, state string, time timestamp)"
