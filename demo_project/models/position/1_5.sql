@@ -12,8 +12,7 @@
 with source_data as (
 
     select '1_5' as id
-    union all
-    select null as id
+
 
 )
 

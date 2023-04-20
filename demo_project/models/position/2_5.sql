@@ -13,7 +13,7 @@ with final as (
 
     select id
     from {{ ref('1_5') }}
-    union all
+    union 
     select id
     from {{ ref('1_6') }}    
 
