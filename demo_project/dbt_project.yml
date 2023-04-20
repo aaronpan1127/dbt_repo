@@ -35,6 +35,7 @@ models:
   +file_format: delta # or hudi
   # Config indicated by + and applies to all files under models/example/
   example:
+    +enabled: false
     +schema: default  
     +materialized: view
   position:
