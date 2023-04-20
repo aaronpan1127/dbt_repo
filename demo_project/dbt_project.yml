@@ -34,6 +34,16 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   +file_format: delta # or hudi
   
+  # pre- and post- hooks can be defined anywhere within the model hierarchy.
+  # when defined at the root level (as they are here), they apply to all models
+  # in all packages. These hooks are compiled into the model SQL and run either
+  # before or after the model is materializated.
+  pre-hook:
+      - "insert into audit (model, state, time) values ('{{this.name}}', 'start', getdate())"
+
+  post-hook:
+      - "insert into audit (model, state, time) values ('{{this.name}}', 'end', getdate())"
+
   demo_project:
   # Config indicated by + and applies to all files under models/example/
     example:
@@ -48,3 +58,8 @@ seeds:
   
 snapshots:
   +file_format: delta # or hudi
+
+# Like the pre- and post- hooks above, the on-run-start and on-run-end configs
+# make it possible to run SQL at the very beginning, and very end of a dbt run.
+on-run-start:
+    - "create table if not exists audit (model text, state text, time timestamp)"
