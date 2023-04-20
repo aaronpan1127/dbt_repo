@@ -37,7 +37,7 @@ models:
   demo_project:
   # Config indicated by + and applies to all files under models/example/
     example:
-      +enabled: false
+      +enabled: true
       +schema: default  
       +materialized: view
     position:
