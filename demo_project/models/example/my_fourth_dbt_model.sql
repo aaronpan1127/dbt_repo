@@ -1,4 +1,9 @@
-{{ config(materialized='table',location_root='/mnt/source_image/test') }}
+{{ config(
+    materialized='table',
+    location_root='/mnt/source_image/test',
+    schema='default1'
+    )
+    }}
 
 -- Use the `ref` function to select from other models
 
