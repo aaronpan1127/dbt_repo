@@ -2,10 +2,10 @@ demo_project:
   outputs:
     dev:
       catalog: null
-      host: adb-3881115180254026.6.azuredatabricks.net
-      http_path: sql/protocolv1/o/3881115180254026/0928-012617-credo999
-      token: dapic96d460b34329e65c8c9c4987533cc61
+      host: adb-4492709390385172.12.azuredatabricks.net
+      http_path: sql/protocolv1/o/4492709390385172/0307-035111-ovhp103l
       schema: default
-      threads: 3
+      token: "{{ env_var('DBT_ACCESS_TOKEN') }}"
+      threads: 5
       type: databricks
   target: dev
