@@ -7,7 +7,7 @@
     Try changing "table" to "view" below
 */
 
-{{ config(materialized='table') }}
+{{ config(materialized='table'), tags=["position 1"]  }}
 
 with final as (
 
