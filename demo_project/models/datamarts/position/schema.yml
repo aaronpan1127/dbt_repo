@@ -19,3 +19,5 @@ models:
         tests:
           - unique
           - not_null
+          - accepted_values:
+              values: ['1_5', '1_6', '1_7', '1_8']
