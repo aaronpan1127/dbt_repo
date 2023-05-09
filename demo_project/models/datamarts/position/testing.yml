@@ -1,0 +1,17 @@
+
+version: 2
+
+models:
+  - name: positions
+    columns:
+      - name: id
+        tests:
+          - unique
+          - not_null
+
+  - name: position_5
+    columns:
+      - name: id
+        tests:
+          - unique
+          - not_null

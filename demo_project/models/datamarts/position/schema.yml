@@ -1,0 +1,21 @@
+
+version: 2
+
+models:
+  - name: positions
+    description: "consolidated position view"
+    columns:
+      - name: id
+        description: "The primary key for position"
+        tests:
+          - unique
+          - not_null
+
+  - name: position_5
+    description: "position 5 model"
+    columns:
+      - name: id
+        description: "The primary key for position 5 model"
+        tests:
+          - unique
+          - not_null
