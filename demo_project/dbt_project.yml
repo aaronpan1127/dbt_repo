@@ -6,6 +6,14 @@ name: 'demo_project'
 version: '1.0.0'
 config-version: 2
 
+
+vars:
+  # The `start_date` variable will be accessible in all resources
+  start_date: '2016-06-01'
+  # The `SeasonalityHorizonMonths` variable is only accessible to resources in the demo_project project
+  # demo_project:
+  #   SeasonalityHorizonMonths: 0
+
 # This setting configures which "profile" dbt uses for this project.
 profile: 'demo_project'
 
@@ -33,25 +41,34 @@ clean-targets:         # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   +file_format: delta # or hudi
-  
+
   # pre- and post- hooks can be defined anywhere within the model hierarchy.
   # when defined at the root level (as they are here), they apply to all models
   # in all packages. These hooks are compiled into the model SQL and run either
   # before or after the model is materializated.
   pre-hook:
-      - "insert into audit (model, state, time) values ('{{this.name}}', 'start', getdate())"
+      - "set ansi_mode = true"
+      # - "SET spark.sql.variable.substitute=false"
+      - "insert into dbt_poc.audit (log_identifier,model, state, time) values ('{{invocation_id}}','{{this.name}}', 'start', getdate())"
 
   post-hook:
-      - "insert into audit (model, state, time) values ('{{this.name}}', 'end', getdate())"
+      - "insert into dbt_poc.audit (log_identifier,model, state, time) values ('{{invocation_id}}','{{this.name}}', 'end', getdate())"  
 
+  dbt_artifacts:
+    +schema: dbt_poc_audit # optional, default is your target schema  
+  
   demo_project:
   # Config indicated by + and applies to all files under models/example/
-    example:
-      +enabled: true
-      +schema: default  
-      +materialized: view
-    position:
-      +schema: position
+    datamarts:
+      example:
+        +enabled: true
+        +schema: default  
+        +materialized: view
+      position:
+        +schema: position
+      core_mm_unbilled:
+        +schema: dbt_poc    
+        # +location_root: /mnt/datamart/dbt_poc/
 
 seeds:
   +file_format: delta # or hudi
@@ -62,4 +79,6 @@ snapshots:
 # Like the pre- and post- hooks above, the on-run-start and on-run-end configs
 # make it possible to run SQL at the very beginning, and very end of a dbt run.
 on-run-start:
-    - "create table if not exists audit (model string, state string, time timestamp)"
+    - "create table if not exists dbt_poc.audit (log_identifier string, model string, state string, time timestamp)"
+on-run-end:
+  - "{{ dbt_artifacts.upload_results(results) }}"

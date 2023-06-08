@@ -12,7 +12,7 @@
 with final as (
 
     select id
-    from {{ ref('3_1') }}
+    from {{ ref('t3_1') }}
   
 
 )
