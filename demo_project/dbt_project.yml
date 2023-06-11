@@ -80,5 +80,5 @@ snapshots:
 # make it possible to run SQL at the very beginning, and very end of a dbt run.
 on-run-start:
     - "create table if not exists dbt_poc.audit (log_identifier string, model string, state string, time timestamp)"
-on-run-end:
-  - "{{ dbt_artifacts.upload_results(results) }}"
+# on-run-end:
+#   - "{{ dbt_artifacts.upload_results(results) }}"
