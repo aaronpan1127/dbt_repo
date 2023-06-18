@@ -9,10 +9,10 @@
 {{ config(materialized='table',alias='calcactualsdetailcoremeter') }}
 
 
-with source_data as (
-    select distinct
-        'Core' as data_source,
-        'Actual' as record_type,
+WITH source_data AS (
+    SELECT DISTINCT
+        'Core' AS data_source,
+        'Actual' AS record_type,
         seq_product_item_id,
         market_region,
         market_sub_region,
@@ -38,23 +38,23 @@ with source_data as (
         daily_disc_amt,
         daily_ppd_amt,
         daily_elig_ppd_amt,
-        case
-            when measure_code = 'DAY_SUPPLY' then total_days
-            when
-                measure_code like 'VOL%'
-                then CAST(mth_qty as NUMERIC(28, 15)) / 1000
-            when measure_code like 'DIS%' then CAST(discount as NUMERIC(28, 15))
-            when
-                measure_code like 'PPD%'
-                then CAST(ppd_amount as NUMERIC(28, 15))
-            when
-                measure_code like 'EPPD%'
-                then CAST(elig_ppd_amount as NUMERIC(28, 15))
-            when measure_code like 'REV%' then CAST(amount as NUMERIC(28, 15))
-        end as measure
-    from
+        CASE
+            WHEN measure_code = 'DAY_SUPPLY' THEN total_days
+            WHEN
+                measure_code LIKE 'VOL%'
+                THEN cast(mth_qty AS numeric(28, 15)) / 1000
+            WHEN measure_code LIKE 'DIS%' THEN cast(discount AS numeric(28, 15))
+            WHEN
+                measure_code LIKE 'PPD%'
+                THEN cast(ppd_amount AS numeric(28, 15))
+            WHEN
+                measure_code LIKE 'EPPD%'
+                THEN cast(elig_ppd_amount AS numeric(28, 15))
+            WHEN measure_code LIKE 'REV%' THEN cast(amount AS numeric(28, 15))
+        END AS measure
+    FROM
         (
-            select
+            SELECT
                 a.seq_product_item_id,
                 a.market_region,
                 a.market_sub_region,
@@ -73,29 +73,29 @@ with source_data as (
                 a.measure_name,
                 a.measure_code,
                 a.measure_unit,
-                a.in_mth_days as total_days,
+                a.in_mth_days AS total_days,
                 a.daily_amt,
                 a.daily_unit_quantity,
                 a.daily_unit_quantity_zr,
                 a.daily_disc_amt,
                 a.daily_ppd_amt,
                 a.daily_elig_ppd_amt,
-                case
-                    when a.solar_zr = 'Y' then a.daily_unit_quantity_zr else
+                CASE
+                    WHEN a.solar_zr = 'Y' THEN a.daily_unit_quantity_zr ELSE
                         a.daily_unit_quantity
-                end
-                * a.in_mth_days as mth_qty,
-                case when a.solar_zr = 'Y' then 0 else a.daily_amt end
-                * a.in_mth_days as amount,
-                case when a.solar_zr = 'Y' then 0 else a.daily_disc_amt end
-                * a.in_mth_days as discount,
-                case when a.solar_zr = 'Y' then 0 else a.daily_ppd_amt end
-                * a.in_mth_days as ppd_amount,
-                case when a.solar_zr = 'Y' then 0 else a.daily_elig_ppd_amt end
-                * a.in_mth_days as elig_ppd_amount
-            from
+                END
+                * a.in_mth_days AS mth_qty,
+                CASE WHEN a.solar_zr = 'Y' THEN 0 ELSE a.daily_amt END
+                * a.in_mth_days AS amount,
+                CASE WHEN a.solar_zr = 'Y' THEN 0 ELSE a.daily_disc_amt END
+                * a.in_mth_days AS discount,
+                CASE WHEN a.solar_zr = 'Y' THEN 0 ELSE a.daily_ppd_amt END
+                * a.in_mth_days AS ppd_amount,
+                CASE WHEN a.solar_zr = 'Y' THEN 0 ELSE a.daily_elig_ppd_amt END
+                * a.in_mth_days AS elig_ppd_amount
+            FROM
                 (
-                    select distinct
+                    SELECT DISTINCT
                         b.seq_product_item_id,
                         b.market_region,
                         b.market_sub_region,
@@ -120,29 +120,29 @@ with source_data as (
                         b.daily_disc_amt,
                         b.daily_ppd_amt,
                         b.daily_elig_ppd_amt,
-                        DATEDIFF(
-                            case
-                                when a.mth_edt < b.bill_edt then a.mth_edt
-                                else b.bill_edt
-                            end,
-                            case
-                                when a.mth_sdt > b.bill_sdt then a.mth_sdt
-                                else b.bill_sdt
-                            end
-                        ) + 1 as in_mth_days
-                    from
-                         {{ ref('AccrualHorizonCore') }} as a
-                    inner join
-                        {{ ref('RetailInvoiceCORE') }} as b
-                        on b.bill_sdt <= a.mth_edt and b.bill_edt >= a.mth_sdt
-                    where b.measure_name is not null
-                ) as a
-            where in_mth_days is not null
-        ) as b
+                        datediff(
+                            CASE
+                                WHEN a.mth_edt < b.bill_edt THEN a.mth_edt
+                                ELSE b.bill_edt
+                            END,
+                            CASE
+                                WHEN a.mth_sdt > b.bill_sdt THEN a.mth_sdt
+                                ELSE b.bill_sdt
+                            END
+                        ) + 1 AS in_mth_days
+                    FROM
+                        {{ ref('AccrualHorizonCore') }} AS a
+                    INNER JOIN
+                        {{ ref('RetailInvoiceCORE') }} AS b
+                        ON b.bill_sdt <= a.mth_edt AND b.bill_edt >= a.mth_sdt
+                    WHERE b.measure_name IS NOT NULL
+                ) AS a
+            WHERE in_mth_days IS NOT NULL
+        ) AS b
 )
 
-select *
-from source_data
+SELECT *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

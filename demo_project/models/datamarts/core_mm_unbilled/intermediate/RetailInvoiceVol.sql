@@ -9,8 +9,8 @@
 {{ config(materialized='ephemeral') }}
 
 
-with source_data as (
-    select distinct
+WITH source_data AS (
+    SELECT DISTINCT
         mrc.fuel_type,
         mrc.market_region,
         mrc.market_sub_region,
@@ -23,171 +23,173 @@ with source_data as (
         mrc.trans_description,
         mrc.adjustment_id,
         mrc.meter_id,
-        mrc.due_date as in_mth_days,
-        mrc.start_date as bill_sdt,
-        mrc.end_date as bill_edt,
-        mrc.name as trans_type_code,
-        mrc.description as trans_type_desc,
-        mrc.id as invoice_header_id,
-        case
-            when
-                mrc.fuel_type = 'GAS' and mrc.plan_item_name != 'DAILY_RETAIL'
-                then 'Volume - Consumption'
-            when mrc.time_class_name in ('SUMMER', 'WINTER') then 'Volume - Climate Saver' -- TimeClass.display_grouping_override currently has wrong values for these 
-            when
+        mrc.due_date AS in_mth_days,
+        mrc.start_date AS bill_sdt,
+        mrc.end_date AS bill_edt,
+        mrc.name AS trans_type_code,
+        mrc.description AS trans_type_desc,
+        mrc.id AS invoice_header_id,
+        CASE
+            WHEN
+                mrc.fuel_type = 'GAS' AND mrc.plan_item_name != 'DAILY_RETAIL'
+                THEN 'Volume - Consumption'
+            -- TimeClass.display_grouping_override currently has wrong values for these 
+            WHEN mrc.time_class_name IN ('SUMMER', 'WINTER') THEN 'Volume - Climate Saver'
+            WHEN
                 (
                     mrc.plan_item_name = 'DEMAND_RETAIL'
-                    or UPPER(mrc.trans_description) like '%DEMAND%'
+                    OR upper(mrc.trans_description) LIKE '%DEMAND%'
                 )
-                then 'Volume - Demand'
+                THEN 'Volume - Demand'
             -- Treat capacity demand charges as primary for now
-            when
+            WHEN
                 mrc.plan_item_name = 'DAILY_RETAIL'
-                then 'Billing Days - Supply Charge'
+                THEN 'Billing Days - Supply Charge'
             -- Retailer payments for solar in South Australia
-            when
+            WHEN
                 (mrc.display_grouping_override = 'SOLAR')
-                and mrc.net_amount != 0
-                then 'Volume - Solar'
-            when
-                (mrc.display_grouping_override = 'SOLAR') and mrc.net_amount = 0
-                then 'Volume - Zero rated solar'
-            when
+                AND mrc.net_amount != 0
+                THEN 'Volume - Solar'
+            WHEN
+                (mrc.display_grouping_override = 'SOLAR') AND mrc.net_amount = 0
+                THEN 'Volume - Zero rated solar'
+            WHEN
                 mrc.display_grouping_override = 'CONTROLLED'
-                then 'Volume - Controlled Load Usage'
-            when
-                mrc.trans_description like '%Any Time Usage%'
-                then 'Volume - Anytime Usage'
-            when
-                mrc.trans_description like '%Off Peak%'
-                then 'Volume - Off Peak'
-            when mrc.time_class_name = 'PEAK' then 'Volume - Peak'
-            when mrc.time_class_name = 'SHOULDER' then 'Volume - Shoulder'
-            when mrc.time_class_name = 'ANYTIME' then 'Volume - Anytime Usage'
-            when mrc.time_class_name = 'OFFPEAK' then 'Volume - Off Peak'
-        end as measure_name,
-        case
-            when
-                mrc.fuel_type = 'GAS' and mrc.plan_item_name != 'DAILY_RETAIL'
-                then 'VOL_CONSUM'
-            when mrc.time_class_name in ('SUMMER', 'WINTER') then 'VOL_CLIMAT' -- TimeClass.display_grouping_override currently has wrong values for these, they are controlled load
+                THEN 'Volume - Controlled Load Usage'
+            WHEN
+                mrc.trans_description LIKE '%Any Time Usage%'
+                THEN 'Volume - Anytime Usage'
+            WHEN
+                mrc.trans_description LIKE '%Off Peak%'
+                THEN 'Volume - Off Peak'
+            WHEN mrc.time_class_name = 'PEAK' THEN 'Volume - Peak'
+            WHEN mrc.time_class_name = 'SHOULDER' THEN 'Volume - Shoulder'
+            WHEN mrc.time_class_name = 'ANYTIME' THEN 'Volume - Anytime Usage'
+            WHEN mrc.time_class_name = 'OFFPEAK' THEN 'Volume - Off Peak'
+        END AS measure_name,
+        CASE
+            WHEN
+                mrc.fuel_type = 'GAS' AND mrc.plan_item_name != 'DAILY_RETAIL'
+                THEN 'VOL_CONSUM'
+            -- TimeClass.display_grouping_override currently has wrong values for these, they are controlled load
+            WHEN mrc.time_class_name IN ('SUMMER', 'WINTER') THEN 'VOL_CLIMAT'
             -- Treat capacity demand charges as primary for now
-            when
+            WHEN
                 (
                     mrc.plan_item_name = 'DEMAND_RETAIL'
-                    or UPPER(mrc.trans_description) like '%DEMAND%'
+                    OR upper(mrc.trans_description) LIKE '%DEMAND%'
                 )
-                then 'VOL_DEMAND'
-            when mrc.plan_item_name = 'DAILY_RETAIL' then 'DAY_SUPPLY'
+                THEN 'VOL_DEMAND'
+            WHEN mrc.plan_item_name = 'DAILY_RETAIL' THEN 'DAY_SUPPLY'
             -- Retailer payments for solar in South Australia
-            when
+            WHEN
                 (mrc.display_grouping_override = 'SOLAR')
-                and mrc.net_amount != 0
-                then 'VOL_SOLAR'
-            when
-                (mrc.display_grouping_override = 'SOLAR') and mrc.net_amount = 0
-                then 'VOL_SZR_SO'
-            when mrc.display_grouping_override = 'CONTROLLED' then 'VOL_CONTRO'
-            when mrc.trans_description like 'Any Time Usage%' then 'VOL_ANYTIM'
-            when mrc.trans_description like '%Off Peak%' then 'VOL_OFFPEA'
-            when mrc.time_class_name = 'PEAK' then 'VOL_PEAK'
-            when mrc.time_class_name = 'SHOULDER' then 'VOL_SHOULD'
-            when mrc.time_class_name = 'OFFPEAK' then 'VOL_OFFPEA'
-            when mrc.time_class_name = 'ANYTIME' then 'VOL_ANYTIM'
-        end as measure_code,
-        case
-            when mrc.plan_item_name = 'DAILY_RETAIL' then 'DAY'
-            when mrc.plan_item_name = 'DEMAND_RETAIL' then 'MVA'
-            when
-                mrc.fuel_type = 'GAS' and mrc.plan_item_name != 'DAILY_RETAIL'
-                then 'GJ'
-            when
-                mrc.display_grouping_override = 'SOLAR' and mrc.net_amount != 0
-                then 'MWh'
-            else 'MWh'
-        end as measure_unit,
-        (DATEDIFF(mrc.end_date, mrc.start_date) + 1) as billing_days,
-        case
-            when
+                AND mrc.net_amount != 0
+                THEN 'VOL_SOLAR'
+            WHEN
+                (mrc.display_grouping_override = 'SOLAR') AND mrc.net_amount = 0
+                THEN 'VOL_SZR_SO'
+            WHEN mrc.display_grouping_override = 'CONTROLLED' THEN 'VOL_CONTRO'
+            WHEN mrc.trans_description LIKE 'Any Time Usage%' THEN 'VOL_ANYTIM'
+            WHEN mrc.trans_description LIKE '%Off Peak%' THEN 'VOL_OFFPEA'
+            WHEN mrc.time_class_name = 'PEAK' THEN 'VOL_PEAK'
+            WHEN mrc.time_class_name = 'SHOULDER' THEN 'VOL_SHOULD'
+            WHEN mrc.time_class_name = 'OFFPEAK' THEN 'VOL_OFFPEA'
+            WHEN mrc.time_class_name = 'ANYTIME' THEN 'VOL_ANYTIM'
+        END AS measure_code,
+        CASE
+            WHEN mrc.plan_item_name = 'DAILY_RETAIL' THEN 'DAY'
+            WHEN mrc.plan_item_name = 'DEMAND_RETAIL' THEN 'MVA'
+            WHEN
+                mrc.fuel_type = 'GAS' AND mrc.plan_item_name != 'DAILY_RETAIL'
+                THEN 'GJ'
+            WHEN
+                mrc.display_grouping_override = 'SOLAR' AND mrc.net_amount != 0
+                THEN 'MWh'
+            ELSE 'MWh'
+        END AS measure_unit,
+        (datediff(mrc.end_date, mrc.start_date) + 1) AS billing_days,
+        CASE
+            WHEN
                 mrc.fuel_type = 'ELECTRICITY'
-                and mrc.display_grouping_override = 'SOLAR'
-                and mrc.net_amount = 0
-                then 'Y'
-            else 'N'
-        end as solar_zr,
-        SIGN(mrc.net_amount) * ABS(
-            case
+                AND mrc.display_grouping_override = 'SOLAR'
+                AND mrc.net_amount = 0
+                THEN 'Y'
+            ELSE 'N'
+        END AS solar_zr,
+        sign(mrc.net_amount) * abs(
+            CASE
                 -- plan_item_type_id = 35 ('Retailer Contribution')
-                when
-                    (mrc.market_region = 'SA' and mrc.plan_item_type_id = 35)
-                    then 0
-                when
-                    DATEDIFF(mrc.end_date, mrc.start_date) = 0
-                    then mrc.quantity * mrc.multiplier
-                else
+                WHEN
+                    (mrc.market_region = 'SA' AND mrc.plan_item_type_id = 35)
+                    THEN 0
+                WHEN
+                    datediff(mrc.end_date, mrc.start_date) = 0
+                    THEN mrc.quantity * mrc.multiplier
+                ELSE
                     mrc.quantity
                     * mrc.multiplier
-                    / (DATEDIFF(mrc.end_date, mrc.start_date) + 1)
-            end
-        ) as daily_unit_quantity,
-        case when
+                    / (datediff(mrc.end_date, mrc.start_date) + 1)
+            END
+        ) AS daily_unit_quantity,
+        CASE WHEN
             mrc.fuel_type = 'ELECTRICITY'
-            and mrc.display_grouping_override = 'SOLAR'
-            and mrc.net_amount = 0
-            then -1 * ABS(
-                case
-                    when
+            AND mrc.display_grouping_override = 'SOLAR'
+            AND mrc.net_amount = 0
+            THEN -1 * abs(
+                CASE
+                    WHEN
                         (
                             mrc.market_region = 'SA'
-                            and mrc.plan_item_type_id = 35
+                            AND mrc.plan_item_type_id = 35
                         )
-                        then 0
-                    when
-                        DATEDIFF(mrc.end_date, mrc.start_date) = 0
-                        then mrc.quantity * mrc.multiplier
-                    else
+                        THEN 0
+                    WHEN
+                        datediff(mrc.end_date, mrc.start_date) = 0
+                        THEN mrc.quantity * mrc.multiplier
+                    ELSE
                         mrc.quantity
                         * mrc.multiplier
-                        / (DATEDIFF(mrc.end_date, mrc.start_date) + 1)
-                end
+                        / (datediff(mrc.end_date, mrc.start_date) + 1)
+                END
             )
-        else 0 end as daily_unit_quantity_zr,
+        ELSE 0 END AS daily_unit_quantity_zr,
         -- Invoice tables
-        DATE_PART(
+        date_part(
             'MONTH',
-            DATE_ADD(
+            date_add(
                 mrc.start_date,
-                CAST(
-                    (DATEDIFF(mrc.end_date, mrc.start_date) + 1)
-                    * (2 / 3) as integer
+                cast(
+                    (datediff(mrc.end_date, mrc.start_date) + 1)
+                    * (2 / 3) AS integer
                 )
             )
-        ) as rmp_mth_no
-    from
-        {{ ref('RegistryCore') }} as mrc
-    where
-        mrc.trans_description not like 'Concession%'
-        and mrc.trans_description != 'Transfer Decrease Cust Balance'
-        and mrc.trans_description != 'Account Adjustment'
-        and mrc.trans_description != 'Unplanned Interruption Adjustment'
-        and mrc.trans_description != 'Over Payment Refund Cheque'
-        and (COALESCE(mrc.quantity, 0) != 0)
+        ) AS rmp_mth_no
+    FROM
+        {{ ref('RegistryCore') }} AS mrc
+    WHERE
+        mrc.trans_description NOT LIKE 'Concession%'
+        AND mrc.trans_description != 'Transfer Decrease Cust Balance'
+        AND mrc.trans_description != 'Account Adjustment'
+        AND mrc.trans_description != 'Unplanned Interruption Adjustment'
+        AND mrc.trans_description != 'Over Payment Refund Cheque'
+        AND (coalesce(mrc.quantity, 0) != 0)
         -- Only include records with InvoiceLineItem.rate >= 0.5 when InvoiceLineItem.plan_item_type_id = 4 ('DAILY_RETAIL') for Electricity. This is to remove CL Supply Charge invoice line item when computing Billing Days metric.
-        and (
+        AND (
             (
                 mrc.plan_item_name = 'DAILY_RETAIL'
-                and mrc.rate >= 0.5
-                and mrc.fuel_type = 'ELECTRICITY'
+                AND mrc.rate >= 0.5
+                AND mrc.fuel_type = 'ELECTRICITY'
             )
             -- Include all rate when InvoiceLineItem.plan_item_type_id = 4 ('DAILY_RETAIL') for Gas
-            or (mrc.plan_item_name = 'DAILY_RETAIL' and mrc.fuel_type = 'GAS')
-            or mrc.plan_item_name != 'DAILY_RETAIL'
+            OR (mrc.plan_item_name = 'DAILY_RETAIL' AND mrc.fuel_type = 'GAS')
+            OR mrc.plan_item_name != 'DAILY_RETAIL'
         )
 
 )
 
-select *
-from source_data
+SELECT *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

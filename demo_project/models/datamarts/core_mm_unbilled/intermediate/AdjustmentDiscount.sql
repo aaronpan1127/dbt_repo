@@ -9,20 +9,20 @@
 {{ config(materialized='table',alias='adjustmentdiscount') }}
 
 
-with source_data as (
+WITH source_data AS (
 
-    select distinct
+    SELECT DISTINCT
         fuel_type,
         market_region,
         market_sub_region,
         customer_segment,
         invoice_id,
-        account_id as seq_product_item_id,
+        account_id AS seq_product_item_id,
         service_sdt,
         service_edt,
         invoice_date,
-        usage_start_date as bill_sdt,
-        usage_end_date as bill_edt,
+        usage_start_date AS bill_sdt,
+        usage_end_date AS bill_edt,
         cntrl_load,
         measure_name,
         measure_code,
@@ -30,103 +30,103 @@ with source_data as (
         discount_amount,
         solar_zr,
         in_mth_days,
-        initcap(trans_description) as trans_description,
-        case
-            when
+        initcap(trans_description) AS trans_description,
+        CASE
+            WHEN
                 datediff(usage_end_date, usage_start_date) > 0
-                and measure_code like 'DIS%'
-                then
+                AND measure_code LIKE 'DIS%'
+                THEN
                     (
                         discount_amount
                         / (datediff(usage_end_date, usage_start_date) + 1)
                     )
-        end as daily_disc_amt,
-        case
-            when
+        END AS daily_disc_amt,
+        CASE
+            WHEN
                 datediff(usage_end_date, usage_start_date) > 0
-                and measure_code like 'EPPD%'
-                then
-                    (
-                        discount_amount
-                        / (datediff(usage_end_date, usage_start_date) + 1)
-                    )
-                    * (-1)
-        end as daily_elig_ppd_amt,
-        case
-            when
-                datediff(usage_end_date, usage_start_date) > 0
-                and measure_code like 'PPD%'
-                then
+                AND measure_code LIKE 'EPPD%'
+                THEN
                     (
                         discount_amount
                         / (datediff(usage_end_date, usage_start_date) + 1)
                     )
                     * (-1)
-        end as daily_ppd_amt,
-        (datediff(usage_end_date, usage_start_date) + 1) as discount_days,
+        END AS daily_elig_ppd_amt,
+        CASE
+            WHEN
+                datediff(usage_end_date, usage_start_date) > 0
+                AND measure_code LIKE 'PPD%'
+                THEN
+                    (
+                        discount_amount
+                        / (datediff(usage_end_date, usage_start_date) + 1)
+                    )
+                    * (-1)
+        END AS daily_ppd_amt,
+        (datediff(usage_end_date, usage_start_date) + 1) AS discount_days,
         date_part(
             'MONTH',
             date_add(
                 usage_start_date,
                 cast(
                     (datediff(usage_end_date, usage_start_date) + 1)
-                    * (2 / 3) as integer
+                    * (2 / 3) AS integer
                 )
             )
-        ) as rmp_mth_no
-    from (
-        select distinct
+        ) AS rmp_mth_no
+    FROM (
+        SELECT DISTINCT
             a.fuel_type,
             a.market_region,
             a.market_sub_region,
-            a.customer_type as customer_segment,
-            i.id as invoice_id,
+            a.customer_type AS customer_segment,
+            i.id AS invoice_id,
             i.account_id,
             a.service_sdt,
             a.service_edt,
-            date(i.posted_date) as invoice_date,
-            min(i.usage_start_date) as usage_start_date,
-            max(i.usage_end_date) as usage_end_date,
-            ili.description as trans_description,
-            case
-                when
-                    tc.name in ('SUMMER', 'WINTER')
-                    or tc.display_grouping_override like 'CONTROLLED%'
-                    then 'Y'
-                else 'N'
-            end as cntrl_load,
+            date(i.posted_date) AS invoice_date,
+            min(i.usage_start_date) AS usage_start_date,
+            max(i.usage_end_date) AS usage_end_date,
+            ili.description AS trans_description,
+            CASE
+                WHEN
+                    tc.name IN ('SUMMER', 'WINTER')
+                    OR tc.display_grouping_override LIKE 'CONTROLLED%'
+                    THEN 'Y'
+                ELSE 'N'
+            END AS cntrl_load,
             -- , SUM(ili.net_amount) AS discount_amount --Change to Guaranteed Discount DAT 5560
 
             -- , SUM(CASE WHEN at2.includes_gst = 1 THEN ili.net_amount/11*10
             --            WHEN at2.includes_gst = 0 THEN ili.net_amount
             --            ELSE ili.net_amount
             --       END) AS discount_amount --Change to Guaranteed Discount DAT 5560, secondary change.  Required because Core's Includes GST flag is not always reliable.  It's been identified that, in certain circumstances, invoice line items have tax amounts.
-            sum(case
-                when
-                    ili.tax_amount = 0 and ili.net_amount != 0
-                    then ili.net_amount / 11 * 10
-                when
-                    ili.tax_amount != 0 and ili.net_amount != 0
-                    then ili.net_amount
-                else 0
+            sum(CASE
+                WHEN
+                    ili.tax_amount = 0 AND ili.net_amount != 0
+                    THEN ili.net_amount / 11 * 10
+                WHEN
+                    ili.tax_amount != 0 AND ili.net_amount != 0
+                    THEN ili.net_amount
+                ELSE 0
             --Change to Guaranteed Discount DAT 5560, secondary change.  
-            end) as discount_amount,
-            'Discount - Guaranteed' as measure_name,
-            case
-                when a.fuel_type = 'ELECTRICITY' then 'DIS_SUPPLY' else 'DIS'
-            end as measure_code,
-            '$' as measure_unit,
-            case
-                when
+            END) AS discount_amount,
+            'Discount - Guaranteed' AS measure_name,
+            CASE
+                WHEN a.fuel_type = 'ELECTRICITY' THEN 'DIS_SUPPLY' ELSE 'DIS'
+            END AS measure_code,
+            '$' AS measure_unit,
+            CASE
+                WHEN
                     a.fuel_type = 'ELECTRICITY'
-                    and tc.display_grouping_override = 'SOLAR'
-                    and sum(ili.net_amount) = 0
-                    then 'Y'
-                else 'N'
-            end as solar_zr,
-            i.due_date as in_mth_days
-        from
-            (select
+                    AND tc.display_grouping_override = 'SOLAR'
+                    AND sum(ili.net_amount) = 0
+                    THEN 'Y'
+                ELSE 'N'
+            END AS solar_zr,
+            i.due_date AS in_mth_days
+        FROM
+            (SELECT
                 id,
                 account_id,
                 posted_date,
@@ -135,9 +135,9 @@ with source_data as (
                 due_date,
                 type,
                 rev_invoice_id
-            from {{ source('structured_core_mm','invoice') }} where adh_active_flag = 1) as i
-        inner join (
-            select
+            FROM {{ source('structured_core_mm','invoice') }} WHERE adh_active_flag = 1) AS i
+        INNER JOIN (
+            SELECT
                 id,
                 account_id,
                 tax_amount,
@@ -149,49 +149,49 @@ with source_data as (
                 invoice_id,
                 discount_net,
                 time_class_id
-            from {{ source('structured_core_mm','invoicelineitem') }} where adh_active_flag = 1
-        ) as ili
-            on i.id = ili.invoice_id
-        inner join
-            (select
+            FROM {{ source('structured_core_mm','invoicelineitem') }} WHERE adh_active_flag = 1
+        ) AS ili
+            ON i.id = ili.invoice_id
+        INNER JOIN
+            (SELECT
                 id,
                 adjustment_group_id,
                 includes_gst,
                 name
-            from {{ source('structured_core_mm','adjustmenttype') }} where adh_active_flag = 1)
-                as at2
-            on at2.id = ili.adjustment_type_id
-        inner join
-            (select
+            FROM {{ source('structured_core_mm','adjustmenttype') }} WHERE adh_active_flag = 1)
+            AS at2
+            ON at2.id = ili.adjustment_type_id
+        INNER JOIN
+            (SELECT
                 id,
                 name
-            from {{ source('structured_core_mm','adjustmentgroup') }} where adh_active_flag = 1)
-                as ag
-            on ag.id = at2.adjustment_group_id
+            FROM {{ source('structured_core_mm','adjustmentgroup') }} WHERE adh_active_flag = 1)
+            AS ag
+            ON ag.id = at2.adjustment_group_id
         -- Account Active Table
-        inner join {{ ref('active_accounts_view') }} as a on a.account_id = ili.account_id
-        left join
-            (select
+        INNER JOIN {{ ref('active_accounts_view') }} AS a ON a.account_id = ili.account_id
+        LEFT JOIN
+            (SELECT
                 id,
                 name,
                 display_grouping_override
-            from {{ source('structured_core_mm','timeclass') }} where adh_active_flag = 1) as tc
-            on tc.id = ili.time_class_id
-        where
+            FROM {{ source('structured_core_mm','timeclass') }} WHERE adh_active_flag = 1) AS tc
+            ON tc.id = ili.time_class_id
+        WHERE
             ili.billable = 1
-            and i.type != 'REVERSAL'
+            AND i.type != 'REVERSAL'
             -- covers both Guaranteed Discounts and Loyalty Credits
             --               AND ag.name = 'DISCOUNTS'  --Change to Guaranteed Discount DAT 5560
             --Change to Guaranteed Discount DAT 5560
-            and at2.name in ('USAGE_DISC', 'USAGE_DISCCR', 'GD', 'GD_REV')
-            and (
+            AND at2.name IN ('USAGE_DISC', 'USAGE_DISCCR', 'GD', 'GD_REV')
+            AND (
                 i.rev_invoice_id = 0
-                or i.rev_invoice_id = -1
-                or i.rev_invoice_id is null
+                OR i.rev_invoice_id = -1
+                OR i.rev_invoice_id IS NULL
             )
             -- Considering only invoices posted before the Accrual period end date
-            and date(i.posted_date) <= '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}'
-        group by
+            AND date(i.posted_date) <= '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}'
+        GROUP BY
             i.id,
             i.account_id,
             i.posted_date,
@@ -206,49 +206,49 @@ with source_data as (
             tc.name,
             tc.display_grouping_override
 
-        union all
+        UNION ALL
 
 
-        select
+        SELECT
             a.fuel_type,
             a.market_region,
             a.market_sub_region,
-            a.customer_type as customer_segment,
-            i.id as invoice_id,
+            a.customer_type AS customer_segment,
+            i.id AS invoice_id,
             i.account_id,
             a.service_sdt,
             a.service_edt,
-            date(i.posted_date) as invoice_date,
-            min(i.usage_start_date) as usage_start_date,
-            max(i.usage_end_date) as usage_end_date,
-            ili.description as trans_description,
-            case
-                when
-                    tc.name in ('SUMMER', 'WINTER')
-                    or tc.display_grouping_override like 'CONTROLLED%'
-                    then 'Y'
-                else 'N'
-            end as cntrl_load,
+            date(i.posted_date) AS invoice_date,
+            min(i.usage_start_date) AS usage_start_date,
+            max(i.usage_end_date) AS usage_end_date,
+            ili.description AS trans_description,
+            CASE
+                WHEN
+                    tc.name IN ('SUMMER', 'WINTER')
+                    OR tc.display_grouping_override LIKE 'CONTROLLED%'
+                    THEN 'Y'
+                ELSE 'N'
+            END AS cntrl_load,
             format_number(sum(ili.discount_net) / 11 * 10, '0.000')
-                as discount_amount,
-            'Discount - Eligible PPD' as measure_name,
+            AS discount_amount,
+            'Discount - Eligible PPD' AS measure_name,
             -- measure_code length is 10
-            case
-                when a.fuel_type = 'ELECTRICITY' then 'EPPD_SUPPL' else 'EPPD'
-            end as measure_code,
-            '$' as measure_unit,
-            case
-                when
+            CASE
+                WHEN a.fuel_type = 'ELECTRICITY' THEN 'EPPD_SUPPL' ELSE 'EPPD'
+            END AS measure_code,
+            '$' AS measure_unit,
+            CASE
+                WHEN
                     a.fuel_type = 'ELECTRICITY'
-                    and tc.display_grouping_override = 'SOLAR'
-                    and sum(ili.net_amount) = 0
-                    then 'Y'
-                else 'N'
-            end as solar_zr,
-            i.due_date as in_mth_days
+                    AND tc.display_grouping_override = 'SOLAR'
+                    AND sum(ili.net_amount) = 0
+                    THEN 'Y'
+                ELSE 'N'
+            END AS solar_zr,
+            i.due_date AS in_mth_days
 
-        from
-            (select
+        FROM
+            (SELECT
                 id,
                 account_id,
                 posted_date,
@@ -257,9 +257,9 @@ with source_data as (
                 due_date,
                 type,
                 rev_invoice_id
-            from {{ source('structured_core_mm','invoice') }} where adh_active_flag = 1) as i
-        inner join (
-            select
+            FROM {{ source('structured_core_mm','invoice') }} WHERE adh_active_flag = 1) AS i
+        INNER JOIN (
+            SELECT
                 id,
                 account_id,
                 net_amount,
@@ -270,32 +270,32 @@ with source_data as (
                 invoice_id,
                 discount_net,
                 time_class_id
-            from {{ source('structured_core_mm','invoicelineitem') }} where adh_active_flag = 1
-        ) as ili
-            on i.id = ili.invoice_id
+            FROM {{ source('structured_core_mm','invoicelineitem') }} WHERE adh_active_flag = 1
+        ) AS ili
+            ON i.id = ili.invoice_id
         -- Account Active Table
-        inner join {{ ref('active_accounts_view') }} as a on a.account_id = ili.account_id
-        left join
-            (select
+        INNER JOIN {{ ref('active_accounts_view') }} AS a ON a.account_id = ili.account_id
+        LEFT JOIN
+            (SELECT
                 id,
                 name,
                 display_grouping_override
-            from {{ source('structured_core_mm','timeclass') }} where adh_active_flag = 1) as tc
-            on tc.id = ili.time_class_id
-        where
+            FROM {{ source('structured_core_mm','timeclass') }} WHERE adh_active_flag = 1) AS tc
+            ON tc.id = ili.time_class_id
+        WHERE
             ili.billable = 1
-            and i.type != 'REVERSAL'
+            AND i.type != 'REVERSAL'
             -- PPDs are for RETAIL_USAGE only
-            and ili.plan_item_type_id = 2
+            AND ili.plan_item_type_id = 2
             -- exclude reversed invoices
-            and (
+            AND (
                 i.rev_invoice_id = 0
-                or i.rev_invoice_id = -1
-                or i.rev_invoice_id is null
+                OR i.rev_invoice_id = -1
+                OR i.rev_invoice_id IS NULL
             )
             -- Considering only invoices posted before the Accrual period end date
-            and date(i.posted_date) <= '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}'
-        group by
+            AND date(i.posted_date) <= '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}'
+        GROUP BY
             i.id,
             i.account_id,
             i.posted_date,
@@ -310,48 +310,48 @@ with source_data as (
             tc.name,
             tc.display_grouping_override
 
-        union all
+        UNION ALL
 
 
-        select
+        SELECT
             a.fuel_type,
             a.market_region,
             a.market_sub_region,
-            a.customer_type as customer_segment,
-            i.id as invoice_id,
+            a.customer_type AS customer_segment,
+            i.id AS invoice_id,
             i.account_id,
             a.service_sdt,
             a.service_edt,
-            date(i.posted_date) as invoice_date,
-            min(i.usage_start_date) as usage_start_date,
-            max(i.usage_end_date) as usage_end_date,
-            ili.description as trans_description,
-            case
-                when
-                    tc.name in ('SUMMER', 'WINTER')
-                    or tc.display_grouping_override like 'CONTROLLED%'
-                    then 'Y'
-                else 'N'
-            end as cntrl_load,
+            date(i.posted_date) AS invoice_date,
+            min(i.usage_start_date) AS usage_start_date,
+            max(i.usage_end_date) AS usage_end_date,
+            ili.description AS trans_description,
+            CASE
+                WHEN
+                    tc.name IN ('SUMMER', 'WINTER')
+                    OR tc.display_grouping_override LIKE 'CONTROLLED%'
+                    THEN 'Y'
+                ELSE 'N'
+            END AS cntrl_load,
             format_number(sum(ili.discount_net) / 11 * 10, '0.000')
-                as discount_amount,
-            'Discount - PPD' as measure_name,
-            case
-                when a.fuel_type = 'ELECTRICITY' then 'PPD_SUPPLY' else 'PPD'
-            end as measure_code,
-            '$' as measure_unit,
-            case
-                when
+            AS discount_amount,
+            'Discount - PPD' AS measure_name,
+            CASE
+                WHEN a.fuel_type = 'ELECTRICITY' THEN 'PPD_SUPPLY' ELSE 'PPD'
+            END AS measure_code,
+            '$' AS measure_unit,
+            CASE
+                WHEN
                     a.fuel_type = 'ELECTRICITY'
-                    and tc.display_grouping_override = 'SOLAR'
-                    and sum(ili.net_amount) = 0
-                    then 'Y'
-                else 'N'
-            end as solar_zr,
-            i.due_date as in_mth_days
+                    AND tc.display_grouping_override = 'SOLAR'
+                    AND sum(ili.net_amount) = 0
+                    THEN 'Y'
+                ELSE 'N'
+            END AS solar_zr,
+            i.due_date AS in_mth_days
 
-        from
-            (select
+        FROM
+            (SELECT
                 id,
                 account_id,
                 posted_date,
@@ -361,9 +361,9 @@ with source_data as (
                 type,
                 rev_invoice_id,
                 ppd_adjustment_id
-            from {{ source('structured_core_mm','invoice') }} where adh_active_flag = 1) as i
-        inner join (
-            select
+            FROM {{ source('structured_core_mm','invoice') }} WHERE adh_active_flag = 1) AS i
+        INNER JOIN (
+            SELECT
                 id,
                 account_id,
                 net_amount,
@@ -374,40 +374,40 @@ with source_data as (
                 invoice_id,
                 discount_net,
                 time_class_id
-            from {{ source('structured_core_mm','invoicelineitem') }} where adh_active_flag = 1
-        ) as ili
-            on i.id = ili.invoice_id
-        inner join
-            (select
+            FROM {{ source('structured_core_mm','invoicelineitem') }} WHERE adh_active_flag = 1
+        ) AS ili
+            ON i.id = ili.invoice_id
+        INNER JOIN
+            (SELECT
                 id,
                 invoice_desc
-            from {{ source('structured_core_mm','adjustment') }} where adh_active_flag = 1) as adj
-            on adj.id = i.ppd_adjustment_id
+            FROM {{ source('structured_core_mm','adjustment') }} WHERE adh_active_flag = 1) AS adj
+            ON adj.id = i.ppd_adjustment_id
 
         -- Account Active Table
-        inner join {{ ref('active_accounts_view') }} as a on a.account_id = ili.account_id
-        left join
-            (select
+        INNER JOIN {{ ref('active_accounts_view') }} AS a ON a.account_id = ili.account_id
+        LEFT JOIN
+            (SELECT
                 id,
                 name,
                 display_grouping_override
-            from {{ source('structured_core_mm','timeclass') }} where adh_active_flag = 1) as tc
-            on tc.id = ili.time_class_id
-        where
+            FROM {{ source('structured_core_mm','timeclass') }} WHERE adh_active_flag = 1) AS tc
+            ON tc.id = ili.time_class_id
+        WHERE
             ili.billable = 1
-            and i.type != 'REVERSAL'
-            and adj.invoice_desc like 'DISCOUNT%'
+            AND i.type != 'REVERSAL'
+            AND adj.invoice_desc LIKE 'DISCOUNT%'
             -- PPDs are for RETAIL_USAGE only
-            and ili.plan_item_type_id = 2
+            AND ili.plan_item_type_id = 2
             -- exclude reversed invoices
-            and (
+            AND (
                 i.rev_invoice_id = 0
-                or i.rev_invoice_id = -1
-                or i.rev_invoice_id is null
+                OR i.rev_invoice_id = -1
+                OR i.rev_invoice_id IS NULL
             )
             -- Considering only invoices posted before the Accrual period end date
-            and date(i.posted_date) <= '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}'
-        group by
+            AND date(i.posted_date) <= '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}'
+        GROUP BY
             i.id,
             i.account_id,
             i.posted_date,
@@ -424,8 +424,8 @@ with source_data as (
     )
 )
 
-select *
-from source_data
+SELECT *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

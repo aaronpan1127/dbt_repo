@@ -8,10 +8,10 @@
 
 {{ config(materialized='table',alias='calcaccrualsneverbilleddetailcore') }}
 
-with source_data as (
-    select distinct
-        'Core' as data_source,
-        'Accrual (Never Billed)' as record_type,
+WITH source_data AS (
+    SELECT DISTINCT
+        'Core' AS data_source,
+        'Accrual (Never Billed)' AS record_type,
         seq_product_item_id,
         market_region,
         market_sub_region,
@@ -21,8 +21,8 @@ with source_data as (
         trans_description,
         cntrl_load,
         solar_zr,
-        'NULL' as bill_sdt,
-        'NULL' as bill_edt,
+        'NULL' AS bill_sdt,
+        'NULL' AS bill_edt,
         mth_sdt,
         mth_edt,
         service_sdt,
@@ -37,22 +37,22 @@ with source_data as (
         daily_disc_amt,
         daily_ppd_amt,
         daily_elig_ppd_amt,
-        case
-            when measure_code = 'DAY_SUPPLY' then total_days
-            when
-                measure_code like 'VOL%'
-                then cast(mth_qty as NUMERIC(28, 15)) / 1000
-            when measure_code like 'DIS%' then cast(discount as NUMERIC(28, 15))
-            when
-                measure_code like 'PPD%'
-                then cast(ppd_amount as NUMERIC(28, 15))
-            when
-                measure_code like 'EPPD%'
-                then cast(elig_ppd_amount as NUMERIC(28, 15))
-            when measure_code like 'REV%' then cast(amount as NUMERIC(28, 15))
-        end as measure
-    from (
-        select distinct
+        CASE
+            WHEN measure_code = 'DAY_SUPPLY' THEN total_days
+            WHEN
+                measure_code LIKE 'VOL%'
+                THEN cast(mth_qty AS numeric(28, 15)) / 1000
+            WHEN measure_code LIKE 'DIS%' THEN cast(discount AS numeric(28, 15))
+            WHEN
+                measure_code LIKE 'PPD%'
+                THEN cast(ppd_amount AS numeric(28, 15))
+            WHEN
+                measure_code LIKE 'EPPD%'
+                THEN cast(elig_ppd_amount AS numeric(28, 15))
+            WHEN measure_code LIKE 'REV%' THEN cast(amount AS numeric(28, 15))
+        END AS measure
+    FROM (
+        SELECT DISTINCT
             a.seq_product_item_id,
             a.market_region,
             a.market_sub_region,
@@ -71,70 +71,70 @@ with source_data as (
             a.measure_unit,
             a.account_number_count,
             a.record_count,
-            a.in_mth_days as total_days,
-            a.avg_daily_amt as daily_amt,
-            a.avg_daily_unit_quantity as daily_unit_quantity,
-            a.avg_daily_unit_quantity_zr as daily_unit_quantity_zr,
-            a.avg_daily_disc_amt as daily_disc_amt,
-            a.avg_daily_ppd_amt as daily_ppd_amt,
-            a.avg_daily_elig_ppd_amt as daily_elig_ppd_amt,
-            (a.account_number_count / a.record_count) as factor,
+            a.in_mth_days AS total_days,
+            a.avg_daily_amt AS daily_amt,
+            a.avg_daily_unit_quantity AS daily_unit_quantity,
+            a.avg_daily_unit_quantity_zr AS daily_unit_quantity_zr,
+            a.avg_daily_disc_amt AS daily_disc_amt,
+            a.avg_daily_ppd_amt AS daily_ppd_amt,
+            a.avg_daily_elig_ppd_amt AS daily_elig_ppd_amt,
+            (a.account_number_count / a.record_count) AS factor,
             -- Mutiplying by a factor to avg_daily values to rationalize the measures values for Never billed account, since the components in the bill are unknown for a never billed account.
             -- Factor  = (No of distinct accounts in the seasonality profile data group,trans_description,measure_name,cntrl_load,solar_zr)/
             --           (Total accounts in the seasonality profile data group,trans_description,measure_name,cntrl_load,solar_zr)
-            case
-                when a.solar_zr = 'Y' then a.avg_daily_unit_quantity_zr
-                when a.record_count = 0 then 0
-                else
+            CASE
+                WHEN a.solar_zr = 'Y' THEN a.avg_daily_unit_quantity_zr
+                WHEN a.record_count = 0 THEN 0
+                ELSE
                     (
                         (a.account_number_count / a.record_count)
                         * a.avg_daily_unit_quantity
                     )
-            end
-            * a.in_mth_days as mth_qty,
-            case
-                when a.solar_zr = 'Y' then 0
-                when a.record_count = 0 then 0
-                else
+            END
+            * a.in_mth_days AS mth_qty,
+            CASE
+                WHEN a.solar_zr = 'Y' THEN 0
+                WHEN a.record_count = 0 THEN 0
+                ELSE
                     (
                         (a.account_number_count / a.record_count)
                         * a.avg_daily_amt
                     )
-            end
-            * a.in_mth_days as amount,
-            case
-                when a.solar_zr = 'Y' then 0
-                when a.record_count = 0 then 0
-                else
+            END
+            * a.in_mth_days AS amount,
+            CASE
+                WHEN a.solar_zr = 'Y' THEN 0
+                WHEN a.record_count = 0 THEN 0
+                ELSE
                     (
                         (a.account_number_count / a.record_count)
                         * a.avg_daily_disc_amt
                     )
-            end
-            * a.in_mth_days as discount,
-            case
-                when a.solar_zr = 'Y' then 0
-                when a.record_count = 0 then 0
-                else
+            END
+            * a.in_mth_days AS discount,
+            CASE
+                WHEN a.solar_zr = 'Y' THEN 0
+                WHEN a.record_count = 0 THEN 0
+                ELSE
                     (
                         (a.account_number_count / a.record_count)
                         * a.avg_daily_ppd_amt
                     )
-            end
-            * a.in_mth_days as ppd_amount,
-            case
-                when a.solar_zr = 'Y' then 0
-                when a.record_count = 0 then 0
-                else
+            END
+            * a.in_mth_days AS ppd_amount,
+            CASE
+                WHEN a.solar_zr = 'Y' THEN 0
+                WHEN a.record_count = 0 THEN 0
+                ELSE
                     (
                         (a.account_number_count / a.record_count)
                         * a.avg_daily_elig_ppd_amt
                     )
-            end
-            * a.in_mth_days as elig_ppd_amount
-        from
+            END
+            * a.in_mth_days AS elig_ppd_amount
+        FROM
             (
-                select distinct
+                SELECT DISTINCT
                     m.seq_product_item_id,
                     s.market_region,
                     s.market_sub_region,
@@ -159,42 +159,42 @@ with source_data as (
                     s.avg_daily_elig_ppd_amt,
                     s.account_number_count,
                     s.record_count,
-                    DATEDIFF(
+                    datediff(
                         -- Including last day in in_mth_days
-                        case
-                            when m.mth_edt < m.service_edt then m.mth_edt
-                            else m.service_edt
-                        end,
-                        case
-                            when m.mth_sdt > m.service_sdt then m.mth_sdt
-                            else m.service_sdt
-                        end
-                    ) + 1 as in_mth_days
-                from
+                        CASE
+                            WHEN m.mth_edt < m.service_edt THEN m.mth_edt
+                            ELSE m.service_edt
+                        END,
+                        CASE
+                            WHEN m.mth_sdt > m.service_sdt THEN m.mth_sdt
+                            ELSE m.service_sdt
+                        END
+                    ) + 1 AS in_mth_days
+                FROM
                     (
-                        select distinct
+                        SELECT DISTINCT
                             record_hash,
                             seq_product_item_id,
                             mth_sdt,
                             mth_edt,
                             service_sdt,
                             service_edt
-                        from {{ ref('NeverBilledCORE') }}
-                    ) as m
-                inner join
+                        FROM {{ ref('NeverBilledCORE') }}
+                    ) AS m
+                INNER JOIN
                     (
-                        select * from {{ ref('SeasonalAvgNBCORE') }}
-                        where trans_description not like '%Import%'
-                    ) as s
-                    on m.record_hash = s.record_hash
-            ) as a
-        where
-            in_mth_days is not null and in_mth_days > 0
-    ) as t
+                        SELECT * FROM {{ ref('SeasonalAvgNBCORE') }}
+                        WHERE trans_description NOT LIKE '%Import%'
+                    ) AS s
+                    ON m.record_hash = s.record_hash
+            ) AS a
+        WHERE
+            in_mth_days IS NOT NULL AND in_mth_days > 0
+    ) AS t
 )
 
-select *
-from source_data
+SELECT *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

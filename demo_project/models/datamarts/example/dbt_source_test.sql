@@ -1,4 +1,3 @@
-
 /*
     Welcome to your first dbt model!
     Did you know that you can also configure models directly within SQL files?
@@ -9,15 +8,15 @@
 
 {{ config(materialized='view') }}
 
-with source_data as (
+WITH source_data AS (
 
-    select * from {{ source('dm_common', 'dim_date') }}
+    SELECT * FROM {{ source('dm_common', 'dim_date') }}
 
 
 )
 
-select *
-from source_data
+SELECT *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

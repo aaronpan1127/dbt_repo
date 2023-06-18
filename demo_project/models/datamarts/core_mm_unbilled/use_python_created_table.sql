@@ -10,14 +10,13 @@
 ,pre_hook="select count(1) from {{ ref('python_test') }}") }}
 
 
-with source_data as (
-    select
-    *
-    from {{ ref('python_test') }}
+WITH source_data AS (
+    SELECT *
+    FROM {{ ref('python_test') }}
 )
 
-select  *
-from source_data
+SELECT *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

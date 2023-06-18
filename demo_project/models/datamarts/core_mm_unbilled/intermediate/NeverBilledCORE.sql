@@ -9,8 +9,8 @@
 {{ config(materialized='table',alias='neverbilledcore') }}
 
 
-with source_data as (
-    select
+WITH source_data AS (
+    SELECT
         -- Creating record_hash on the seasonality profile data group
         *,
         md5(
@@ -21,9 +21,9 @@ with source_data as (
                 market_region,
                 customer_segment
             )
-        ) as record_hash
-    from (
-        select distinct
+        ) AS record_hash
+    FROM (
+        SELECT DISTINCT
             h.mth_no,
             h.mth_sdt,
             h.mth_edt,
@@ -34,15 +34,15 @@ with source_data as (
             m.service_sdt,
             m.service_edt,
             m.customer_segment
-        from {{ ref('AccrualHorizonCore') }} as h
-        inner join {{ ref('NeverBilledCOREView') }} as m
+        FROM {{ ref('AccrualHorizonCore') }} AS h
+        INNER JOIN {{ ref('NeverBilledCOREView') }} AS m
             -- service period during the reporting month
-            on m.service_sdt <= h.mth_edt and m.service_edt >= h.mth_sdt
-    ) as tbl
+            ON m.service_sdt <= h.mth_edt AND m.service_edt >= h.mth_sdt
+    ) AS tbl
 )
 
-select *
-from source_data
+SELECT *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

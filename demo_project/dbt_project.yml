@@ -65,7 +65,7 @@ models:
         +schema: default  
         +materialized: view
       position:
-        +schema: position
+        +schema: position_test
       core_mm_unbilled:
         +schema: dbt_poc    
         # +location_root: /mnt/datamart/dbt_poc/

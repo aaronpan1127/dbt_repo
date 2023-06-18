@@ -9,33 +9,33 @@
 {{ config(materialized='incremental') }}
 
 
-with source_data as (
+WITH source_data AS (
 
-    select
-        {{ var('UnbilledAccrualRunRequestID',25) }} as unbilled_accrual_run_audit_id,
-        '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}' as unbilled_accrual_period_end_date,
+    SELECT
+        {{ var('UnbilledAccrualRunRequestID',25) }} AS unbilled_accrual_run_audit_id,
+        '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}' AS unbilled_accrual_period_end_date,
         data_source,
-        case
-            when fuel_type = 'GAS' then 'Gas'
-            when fuel_type = 'ELECTRICITY' then 'Elec'
-        end as fuel_type,        
-        record_type as record_type,
-        market_region as market_region,
-        market_sub_region as market_sub_region,
-        market_segment as market_segment,
-        customer_segment as customer_segment,
-        mth_sdt as month_start_date,
+        CASE
+            WHEN fuel_type = 'GAS' THEN 'Gas'
+            WHEN fuel_type = 'ELECTRICITY' THEN 'Elec'
+        END AS fuel_type,
+        record_type AS record_type,
+        market_region AS market_region,
+        market_sub_region AS market_sub_region,
+        market_segment AS market_segment,
+        customer_segment AS customer_segment,
+        mth_sdt AS month_start_date,
         measure_name,
         measure_code,
-        case
-            when measure_code like 'VOL_DEMAND%' then 'MVA' else measure_unit
-        end as measure_unit,        
-        SUM(COALESCE(measure, 0)) as measure_value,        
-        seq_product_item_id as service_id,
-        cast(NULL as string) as meter_id,
-        cast(NULL as string) as postal_code
-    from {{ ref('CalcActualsDetailCOREmeter') }}
-    group by
+        CASE
+            WHEN measure_code LIKE 'VOL_DEMAND%' THEN 'MVA' ELSE measure_unit
+        END AS measure_unit,
+        sum(coalesce(measure, 0)) AS measure_value,
+        seq_product_item_id AS service_id,
+        cast(null AS string) AS meter_id,
+        cast(null AS string) AS postal_code
+    FROM {{ ref('CalcActualsDetailCOREmeter') }}
+    GROUP BY
         data_source,
         fuel_type,
         record_type,
@@ -46,38 +46,38 @@ with source_data as (
         mth_sdt,
         measure_name,
         measure_code,
-        case
-            when measure_code like 'VOL_DEMAND%' then 'MVA' else measure_unit
-        end,
+        CASE
+            WHEN measure_code LIKE 'VOL_DEMAND%' THEN 'MVA' ELSE measure_unit
+        END,
         seq_product_item_id
 
-    union all
+    UNION ALL
 
-    select
-        {{ var('UnbilledAccrualRunRequestID',25) }} as unbilled_accrual_run_audit_id,
-        '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}' as unbilled_accrual_period_end_date,
+    SELECT
+        {{ var('UnbilledAccrualRunRequestID',25) }} AS unbilled_accrual_run_audit_id,
+        '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}' AS unbilled_accrual_period_end_date,
         data_source,
-        case
-            when fuel_type = 'GAS' then 'Gas'
-            when fuel_type = 'ELECTRICITY' then 'Elec'
-        end as fuel_type,
-        record_type as record_type,
-        market_region as market_region,
-        market_sub_region as market_sub_region,
-        market_segment as market_segment,
-        customer_segment as customer_segment,
-        mth_sdt as month_start_date,
+        CASE
+            WHEN fuel_type = 'GAS' THEN 'Gas'
+            WHEN fuel_type = 'ELECTRICITY' THEN 'Elec'
+        END AS fuel_type,
+        record_type AS record_type,
+        market_region AS market_region,
+        market_sub_region AS market_sub_region,
+        market_segment AS market_segment,
+        customer_segment AS customer_segment,
+        mth_sdt AS month_start_date,
         measure_name,
         measure_code,
-        case
-            when measure_code like 'VOL_DEMAND%' then 'MVA' else measure_unit
-        end as measure_unit,
-        SUM(COALESCE(measure, 0)) as measure_value,
-        seq_product_item_id as service_id,
-        cast(NULL as string) as meter_id,
-        cast(NULL as string) as postal_code
-    from {{ ref('CalcAccrualsExistingDetailCORE') }}
-    group by
+        CASE
+            WHEN measure_code LIKE 'VOL_DEMAND%' THEN 'MVA' ELSE measure_unit
+        END AS measure_unit,
+        sum(coalesce(measure, 0)) AS measure_value,
+        seq_product_item_id AS service_id,
+        cast(null AS string) AS meter_id,
+        cast(null AS string) AS postal_code
+    FROM {{ ref('CalcAccrualsExistingDetailCORE') }}
+    GROUP BY
         data_source,
         fuel_type,
         record_type,
@@ -88,38 +88,38 @@ with source_data as (
         mth_sdt,
         measure_name,
         measure_code,
-        case
-            when measure_code like 'VOL_DEMAND%' then 'MVA' else measure_unit
-        end,
+        CASE
+            WHEN measure_code LIKE 'VOL_DEMAND%' THEN 'MVA' ELSE measure_unit
+        END,
         seq_product_item_id
 
-    union all
+    UNION ALL
 
-    select
-        {{ var('UnbilledAccrualRunRequestID',25) }} as unbilled_accrual_run_audit_id,
-        '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}' as unbilled_accrual_period_end_date,
+    SELECT
+        {{ var('UnbilledAccrualRunRequestID',25) }} AS unbilled_accrual_run_audit_id,
+        '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}' AS unbilled_accrual_period_end_date,
         data_source,
-        case
-            when fuel_type = 'GAS' then 'Gas'
-            when fuel_type = 'ELECTRICITY' then 'Elec'
-        end as fuel_type,
-        record_type as record_type,
-        market_region as market_region,
-        market_sub_region as market_sub_region,
-        market_segment as market_segment,
-        customer_segment as customer_segment,
-        mth_sdt as month_start_date,
+        CASE
+            WHEN fuel_type = 'GAS' THEN 'Gas'
+            WHEN fuel_type = 'ELECTRICITY' THEN 'Elec'
+        END AS fuel_type,
+        record_type AS record_type,
+        market_region AS market_region,
+        market_sub_region AS market_sub_region,
+        market_segment AS market_segment,
+        customer_segment AS customer_segment,
+        mth_sdt AS month_start_date,
         measure_name,
         measure_code,
-        case
-            when measure_code like 'VOL_DEMAND%' then 'MVA' else measure_unit
-        end as measure_unit,
-        SUM(COALESCE(measure, 0)) as measure_value,
-        seq_product_item_id as service_id,
-        cast(NULL as string) as meter_id,
-        cast(NULL as string) as postal_code
-    from {{ ref('CalcAccrualsNeverBilledDetailCORE') }}
-    group by
+        CASE
+            WHEN measure_code LIKE 'VOL_DEMAND%' THEN 'MVA' ELSE measure_unit
+        END AS measure_unit,
+        sum(coalesce(measure, 0)) AS measure_value,
+        seq_product_item_id AS service_id,
+        cast(null AS string) AS meter_id,
+        cast(null AS string) AS postal_code
+    FROM {{ ref('CalcAccrualsNeverBilledDetailCORE') }}
+    GROUP BY
         data_source,
         fuel_type,
         record_type,
@@ -130,15 +130,17 @@ with source_data as (
         mth_sdt,
         measure_name,
         measure_code,
-        case
-            when measure_code like 'VOL_DEMAND%' then 'MVA' else measure_unit
-        end,
-        seq_product_item_id        
+        CASE
+            WHEN measure_code LIKE 'VOL_DEMAND%' THEN 'MVA' ELSE measure_unit
+        END,
+        seq_product_item_id
 
 )
 
-select '{{invocation_id}}' as run_id, *
-from source_data
+SELECT
+    '{{ invocation_id }}' AS run_id,
+    *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

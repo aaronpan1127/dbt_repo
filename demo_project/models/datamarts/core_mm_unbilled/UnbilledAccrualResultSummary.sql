@@ -9,9 +9,9 @@
 {{ config(materialized='incremental') }}
 
 
-with unbilledaccrualresultsummary_tmp as (
+WITH unbilledaccrualresultsummary_tmp AS (
 
-    select
+    SELECT
         unbilled_accrual_run_audit_id,
         unbilled_accrual_period_end_date,
         data_source,
@@ -25,12 +25,12 @@ with unbilledaccrualresultsummary_tmp as (
         measure_name,
         measure_code,
         measure_unit,
-        SUM(measure_value) as measure_value,
-        COUNT(service_id) as service_count
-    from {{ ref('UnbilledAccrualResultDetail') }} where
+        sum(measure_value) AS measure_value,
+        count(service_id) AS service_count
+    FROM {{ ref('UnbilledAccrualResultDetail') }} WHERE
         data_source = 'Core'
-        and unbilled_accrual_run_audit_id = {{ var('UnbilledAccrualRunRequestID',25) }}
-    group by
+        AND unbilled_accrual_run_audit_id = {{ var('UnbilledAccrualRunRequestID',25) }}
+    GROUP BY
         unbilled_accrual_run_audit_id,
         unbilled_accrual_period_end_date,
         data_source,
@@ -45,13 +45,14 @@ with unbilledaccrualresultsummary_tmp as (
         measure_code,
         measure_unit
 ),
-source_data as (
-    select * from unbilledaccrualresultsummary_tmp
-    union all
 
-    select
-        {{ var('UnbilledAccrualRunRequestID',25) }} as unbilled_accrual_run_audit_id,
-        '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}' as unbilled_accrual_period_end_date,
+source_data AS (
+    SELECT * FROM unbilledaccrualresultsummary_tmp
+    UNION ALL
+
+    SELECT
+        {{ var('UnbilledAccrualRunRequestID',25) }} AS unbilled_accrual_run_audit_id,
+        '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}' AS unbilled_accrual_period_end_date,
         data_source,
         fuel_type,
         record_type,
@@ -60,19 +61,21 @@ source_data as (
         market_segment,
         customer_segment,
         month_start_date,
-        'Service Count' as measure_name,
-        'SERVICES' as measure_code,
-        'Meters' as measure_unit,
-        service_count as measure_value,
-        service_count as service_count
-    from unbilledaccrualresultsummary_tmp
-    where
-        data_source = 'Core' and measure_code like 'DAY%'
+        'Service Count' AS measure_name,
+        'SERVICES' AS measure_code,
+        'Meters' AS measure_unit,
+        service_count AS measure_value,
+        service_count AS service_count
+    FROM unbilledaccrualresultsummary_tmp
+    WHERE
+        data_source = 'Core' AND measure_code LIKE 'DAY%'
 
 )
 
-select '{{invocation_id}}' as run_id,*
-from source_data
+SELECT
+    '{{ invocation_id }}' AS run_id,
+    *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

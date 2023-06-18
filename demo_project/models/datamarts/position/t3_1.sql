@@ -1,4 +1,3 @@
-
 /*
     Welcome to your first dbt model!
     Did you know that you can also configure models directly within SQL files?
@@ -9,21 +8,21 @@
 
 {{ config(materialized='table', tags=["position1"] ) }}
 
-with final as (
+WITH final AS (
 
-    select id
-    from {{ ref('2_1') }}
-    union 
-    select id
-    from {{ ref('2_2') }}
-    union 
-    select id
-    from {{ ref('2_3') }}    
+    SELECT id
+    FROM {{ ref('2_1') }}
+    UNION
+    SELECT id
+    FROM {{ ref('2_2') }}
+    UNION
+    SELECT id
+    FROM {{ ref('2_3') }}
 
 )
 
-select *
-from final
+SELECT *
+FROM final
 
 /*
     Uncomment the line below to remove records with null `id` values

@@ -10,12 +10,12 @@
 
 {{ config(materialized='table',alias='retailinvoicecore',post_hook='analyze table {{ this }} compute statistics') }}
 
-with source_data as (
+WITH source_data AS (
 -- Combining RetailInvoiceVol,RetailInvoiceRevenue and AdjustmentDiscounts
-    select
+    SELECT
         -- Creating record_hash on the seasonality profile data group
         *,
-        'MM' as market_segment,
+        'MM' AS market_segment,
         md5(
             concat(
                 rmp_mth_no,
@@ -24,24 +24,24 @@ with source_data as (
                 market_region,
                 customer_segment
             )
-        ) as record_hash,
-        case
-            when coalesce(ex_charge_desc_orion, '') = '' then trans_description
-            when
-                ex_charge_desc_orion like '%Supply%'
-                then replace(trans_description, 'Supply', 'Daily')
-            else ex_charge_desc_orion
-        end as ex_charge_desc,
+        ) AS record_hash,
+        CASE
+            WHEN coalesce(ex_charge_desc_orion, '') = '' THEN trans_description
+            WHEN
+                ex_charge_desc_orion LIKE '%Supply%'
+                THEN replace(trans_description, 'Supply', 'Daily')
+            ELSE ex_charge_desc_orion
+        END AS ex_charge_desc,
         -- Obtaining latest invoice of the customer
         dense_rank()
-            over (partition by seq_product_item_id order by bill_sdt desc)
-            as bill_sdt_rnk,
+            OVER (PARTITION BY seq_product_item_id ORDER BY bill_sdt DESC)
+        AS bill_sdt_rnk,
         dense_rank()
-            over (partition by seq_product_item_id order by bill_edt desc)
-            as bill_edt_rnk
-    from
+            OVER (PARTITION BY seq_product_item_id ORDER BY bill_edt DESC)
+        AS bill_edt_rnk
+    FROM
         (
-            select distinct
+            SELECT DISTINCT
                 fuel_type,
                 market_region,
                 market_sub_region,
@@ -52,48 +52,48 @@ with source_data as (
                 bill_sdt,
                 bill_edt,
                 trans_description,
-                trim(replace(replace(replace(case
-                    when
-                        trans_description not like 'Controlled%'
-                        and charindex('(', trans_description, 1) > 1
-                        then
+                trim(replace(replace(replace(CASE
+                    WHEN
+                        trans_description NOT LIKE 'Controlled%'
+                        AND charindex('(', trans_description, 1) > 1
+                        THEN
                             trim(
                                 left(
                                     trans_description,
                                     charindex('(', trans_description, 1) - 1
                                 )
                             )
-                    when
-                        trans_description not like 'Controlled%'
-                        and charindex('-', trans_description, 1) > 1
-                        then
+                    WHEN
+                        trans_description NOT LIKE 'Controlled%'
+                        AND charindex('-', trans_description, 1) > 1
+                        THEN
                             trim(
                                 left(
                                     trans_description,
                                     charindex('-', trans_description, 1) - 1
                                 )
                             )
-                    else trans_description
-                end, 'Off Peak', ''), 'Peak', ''), 'Rebate', ''))
-                    as ex_charge_desc_orion,
+                    ELSE trans_description
+                END, 'Off Peak', ''), 'Peak', ''), 'Rebate', ''))
+                AS ex_charge_desc_orion,
                 cntrl_load,
                 solar_zr,
                 measure_name,
                 measure_code,
                 measure_unit,
-                NULL as daily_amt,
+                null AS daily_amt,
                 daily_unit_quantity,
                 daily_unit_quantity_zr,
-                NULL as daily_disc_amt,
-                NULL as daily_ppd_amt,
-                NULL as daily_elig_ppd_amt,
+                null AS daily_disc_amt,
+                null AS daily_ppd_amt,
+                null AS daily_elig_ppd_amt,
                 rmp_mth_no
 
-            from {{ ref('RetailInvoiceVol') }}
+            FROM {{ ref('RetailInvoiceVol') }}
 
-            union all
+            UNION ALL
 
-            select distinct
+            SELECT DISTINCT
                 fuel_type,
                 market_region,
                 market_sub_region,
@@ -104,46 +104,46 @@ with source_data as (
                 bill_sdt,
                 bill_edt,
                 trans_description,
-                trim(replace(replace(replace(case
-                    when
-                        trans_description not like 'Controlled%'
-                        and charindex('(', trans_description, 1) > 1
-                        then
+                trim(replace(replace(replace(CASE
+                    WHEN
+                        trans_description NOT LIKE 'Controlled%'
+                        AND charindex('(', trans_description, 1) > 1
+                        THEN
                             trim(
                                 left(
                                     trans_description,
                                     charindex('(', trans_description, 1) - 1
                                 )
                             )
-                    when
-                        trans_description not like 'Controlled%'
-                        and charindex('-', trans_description, 1) > 1
-                        then
+                    WHEN
+                        trans_description NOT LIKE 'Controlled%'
+                        AND charindex('-', trans_description, 1) > 1
+                        THEN
                             trim(
                                 left(
                                     trans_description,
                                     charindex('-', trans_description, 1) - 1
                                 )
                             )
-                    else trans_description
-                end, 'Off Peak', ''), 'Peak', ''), 'Rebate', ''))
-                    as ex_charge_desc_orion,
+                    ELSE trans_description
+                END, 'Off Peak', ''), 'Peak', ''), 'Rebate', ''))
+                AS ex_charge_desc_orion,
                 cntrl_load,
                 solar_zr,
                 measure_name,
                 measure_code,
                 measure_unit,
                 daily_amt,
-                NULL as daily_unit_quantity,
-                NULL as daily_unit_quantity_zr,
-                NULL as daily_disc_amt,
-                NULL as daily_ppd_amt,
-                NULL as daily_elig_ppd_amt,
+                null AS daily_unit_quantity,
+                null AS daily_unit_quantity_zr,
+                null AS daily_disc_amt,
+                null AS daily_ppd_amt,
+                null AS daily_elig_ppd_amt,
                 rmp_mth_no
-            from {{ ref('RetailInvoiceRevenue') }}
+            FROM {{ ref('RetailInvoiceRevenue') }}
 
-            union all
-            select distinct
+            UNION ALL
+            SELECT DISTINCT
                 fuel_type,
                 market_region,
                 market_sub_region,
@@ -154,50 +154,50 @@ with source_data as (
                 bill_sdt,
                 bill_edt,
                 trans_description,
-                trim(replace(replace(replace(case
-                    when
-                        trans_description not like 'Controlled%'
-                        and charindex('(', trans_description, 1) > 1
-                        then
+                trim(replace(replace(replace(CASE
+                    WHEN
+                        trans_description NOT LIKE 'Controlled%'
+                        AND charindex('(', trans_description, 1) > 1
+                        THEN
                             trim(
                                 left(
                                     trans_description,
                                     charindex('(', trans_description, 1) - 1
                                 )
                             )
-                    when
-                        trans_description not like 'Controlled%'
-                        and charindex('-', trans_description, 1) > 1
-                        then
+                    WHEN
+                        trans_description NOT LIKE 'Controlled%'
+                        AND charindex('-', trans_description, 1) > 1
+                        THEN
                             trim(
                                 left(
                                     trans_description,
                                     charindex('-', trans_description, 1) - 1
                                 )
                             )
-                    else trans_description
-                end, 'Off Peak', ''), 'Peak', ''), 'Rebate', ''))
-                    as ex_charge_desc_orion,
+                    ELSE trans_description
+                END, 'Off Peak', ''), 'Peak', ''), 'Rebate', ''))
+                AS ex_charge_desc_orion,
                 cntrl_load,
                 solar_zr,
                 measure_name,
                 measure_code,
                 measure_unit,
-                NULL as daily_amt,
-                NULL as daily_unit_quantity,
-                NULL as daily_unit_quantity_zr,
+                null AS daily_amt,
+                null AS daily_unit_quantity,
+                null AS daily_unit_quantity_zr,
                 daily_disc_amt,
                 daily_ppd_amt,
                 daily_elig_ppd_amt,
                 rmp_mth_no
 
-            from {{ ref('AdjustmentDiscount') }}
-        ) as t
-    where measure_name is not null
+            FROM {{ ref('AdjustmentDiscount') }}
+        ) AS t
+    WHERE measure_name IS NOT NULL
 )
 
-select *
-from source_data
+SELECT *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values

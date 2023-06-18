@@ -10,10 +10,10 @@
 
 
 
-with source_data as (
-    select distinct
-        'Core' as data_source,
-        'Accrual (Existing)' as record_type,
+WITH source_data AS (
+    SELECT DISTINCT
+        'Core' AS data_source,
+        'Accrual (Existing)' AS record_type,
         seq_product_item_id,
         market_region,
         market_sub_region,
@@ -39,23 +39,23 @@ with source_data as (
         daily_disc_amt,
         daily_ppd_amt,
         daily_elig_ppd_amt,
-        case
-            when measure_code = 'DAY_SUPPLY' then total_days
-            when
-                measure_code like 'VOL%'
-                then CAST(mth_qty as NUMERIC(28, 15)) / 1000
-            when measure_code like 'DIS%' then CAST(discount as NUMERIC(28, 15))
-            when
-                measure_code like 'PPD%'
-                then CAST(ppd_amount as NUMERIC(28, 15))
-            when
-                measure_code like 'EPPD%'
-                then CAST(elig_ppd_amount as NUMERIC(28, 15))
-            when measure_code like 'REV%' then CAST(amount as NUMERIC(28, 15))
-        end as measure
-    from
+        CASE
+            WHEN measure_code = 'DAY_SUPPLY' THEN total_days
+            WHEN
+                measure_code LIKE 'VOL%'
+                THEN cast(mth_qty AS numeric(28, 15)) / 1000
+            WHEN measure_code LIKE 'DIS%' THEN cast(discount AS numeric(28, 15))
+            WHEN
+                measure_code LIKE 'PPD%'
+                THEN cast(ppd_amount AS numeric(28, 15))
+            WHEN
+                measure_code LIKE 'EPPD%'
+                THEN cast(elig_ppd_amount AS numeric(28, 15))
+            WHEN measure_code LIKE 'REV%' THEN cast(amount AS numeric(28, 15))
+        END AS measure
+    FROM
         (
-            select distinct
+            SELECT DISTINCT
                 a.seq_product_item_id,
                 a.market_region,
                 a.market_sub_region,
@@ -74,21 +74,21 @@ with source_data as (
                 a.measure_name,
                 a.measure_code,
                 a.measure_unit,
-                a.in_mth_days as total_days,
+                a.in_mth_days AS total_days,
                 a.daily_amt,
                 a.daily_unit_quantity,
                 a.daily_unit_quantity_zr,
                 a.daily_disc_amt,
                 a.daily_ppd_amt,
                 a.daily_elig_ppd_amt,
-                a.deemed_avg_qty * a.in_mth_days as mth_qty,
-                a.daily_amt * a.in_mth_days as amount,
-                a.daily_disc_amt * a.in_mth_days as discount,
-                a.daily_ppd_amt * a.in_mth_days as ppd_amount,
-                a.daily_elig_ppd_amt * a.in_mth_days as elig_ppd_amount
-            from
+                a.deemed_avg_qty * a.in_mth_days AS mth_qty,
+                a.daily_amt * a.in_mth_days AS amount,
+                a.daily_disc_amt * a.in_mth_days AS discount,
+                a.daily_ppd_amt * a.in_mth_days AS ppd_amount,
+                a.daily_elig_ppd_amt * a.in_mth_days AS elig_ppd_amount
+            FROM
                 (
-                    select distinct
+                    SELECT DISTINCT
                         s.seq_product_item_id,
                         s.market_region,
                         s.market_sub_region,
@@ -109,117 +109,117 @@ with source_data as (
                         s.measure_unit,
                         s.daily_unit_quantity,
                         s.daily_unit_quantity_zr,
-                        case
-                            when
-                                sa.avg_daily_unit_quantity is null
-                                then 1
-                            else
+                        CASE
+                            WHEN
+                                sa.avg_daily_unit_quantity IS NULL
+                                THEN 1
+                            ELSE
                                 sa.avg_daily_unit_quantity
                                 / s.avg_daily_unit_quantity
-                        end
-                        * case when s.solar_zr = 'Y' then s.daily_unit_quantity_zr else s.daily_unit_quantity
-                        end as deemed_avg_qty,
-                        case when s.solar_zr = 'Y' then 0 else s.daily_amt end
-                            as daily_amt,
-                        case
-                            when s.solar_zr = 'Y' then 0 else s.daily_disc_amt
-                        end as daily_disc_amt,
-                        case
-                            when s.solar_zr = 'Y' then 0 else s.daily_ppd_amt
-                        end as daily_ppd_amt,
-                        case
-                            when s.solar_zr = 'Y' then 0 else
+                        END
+                        * CASE WHEN s.solar_zr = 'Y' THEN s.daily_unit_quantity_zr ELSE s.daily_unit_quantity
+                        END AS deemed_avg_qty,
+                        CASE WHEN s.solar_zr = 'Y' THEN 0 ELSE s.daily_amt END
+                        AS daily_amt,
+                        CASE
+                            WHEN s.solar_zr = 'Y' THEN 0 ELSE s.daily_disc_amt
+                        END AS daily_disc_amt,
+                        CASE
+                            WHEN s.solar_zr = 'Y' THEN 0 ELSE s.daily_ppd_amt
+                        END AS daily_ppd_amt,
+                        CASE
+                            WHEN s.solar_zr = 'Y' THEN 0 ELSE
                                 s.daily_elig_ppd_amt
-                        end as daily_elig_ppd_amt,
-                        DATEDIFF(
+                        END AS daily_elig_ppd_amt,
+                        datediff(
                             -- Including last day in in_mth_days
-                            DATE_ADD(case
-                                when
+                            date_add(CASE
+                                WHEN
                                     (
                                         s.service_edt >= a.mth_sdt
-                                        or s.service_edt is null
+                                        OR s.service_edt IS NULL
                                     )
-                                    and (s.service_sdt <= a.mth_edt)
-                                    then
-                                        case
+                                    AND (s.service_sdt <= a.mth_edt)
+                                    THEN
+                                        CASE
                                             -- 3A
-                                            when
+                                            WHEN
                                                 s.bill_edt < a.mth_sdt
-                                                and (
+                                                AND (
                                                     a.mth_edt <= s.service_edt
-                                                    or s.service_edt is null
+                                                    OR s.service_edt IS NULL
                                                 )
-                                                then a.mth_edt
+                                                THEN a.mth_edt
                                             -- 3B
-                                            when
+                                            WHEN
                                                 s.bill_edt >= a.mth_sdt
-                                                and (
+                                                AND (
                                                     a.mth_edt <= s.service_edt
-                                                    or s.service_edt is null
+                                                    OR s.service_edt IS NULL
                                                 )
-                                                then a.mth_edt
+                                                THEN a.mth_edt
                                             --2Bi
-                                            when
+                                            WHEN
                                                 s.bill_edt >= a.mth_sdt
-                                                and a.mth_edt >= s.service_edt
-                                                then s.service_edt
+                                                AND a.mth_edt >= s.service_edt
+                                                THEN s.service_edt
                                             -- 2A
-                                            when
+                                            WHEN
                                                 s.bill_edt < a.mth_sdt
-                                                and (
+                                                AND (
                                                     a.mth_edt >= s.service_edt
-                                                    or s.service_edt is null
+                                                    OR s.service_edt IS NULL
                                                 )
-                                                then s.service_edt
-                                        end
-                            end, 1),
-                            case
-                                when
+                                                THEN s.service_edt
+                                        END
+                            END, 1),
+                            CASE
+                                WHEN
                                     (
                                         s.service_edt >= a.mth_sdt
-                                        or s.service_edt is null
+                                        OR s.service_edt IS NULL
                                     )
-                                    and (s.service_sdt <= a.mth_edt)
-                                    then
-                                        case
+                                    AND (s.service_sdt <= a.mth_edt)
+                                    THEN
+                                        CASE
                                             -- 3A
-                                            when
+                                            WHEN
                                                 s.bill_edt < a.mth_sdt
-                                                and (
+                                                AND (
                                                     a.mth_edt <= s.service_edt
-                                                    or s.service_edt is null
+                                                    OR s.service_edt IS NULL
                                                 )
-                                                then a.mth_sdt
+                                                THEN a.mth_sdt
                                             --3B
-                                            when
+                                            WHEN
                                                 s.bill_edt >= a.mth_sdt
-                                                and (
+                                                AND (
                                                     a.mth_edt <= s.service_edt
-                                                    or s.service_edt is null
+                                                    OR s.service_edt IS NULL
                                                 )
-                                                then DATE_ADD(s.bill_edt, 1)
+                                                THEN date_add(s.bill_edt, 1)
                                             --2Bi
-                                            when
+                                            WHEN
                                                 s.bill_edt >= a.mth_sdt
-                                                and a.mth_edt >= s.service_edt
-                                                then DATE_ADD(s.bill_edt, 1)
+                                                AND a.mth_edt >= s.service_edt
+                                                THEN date_add(s.bill_edt, 1)
                                             -- 2A
-                                            when
+                                            WHEN
                                                 s.bill_edt < a.mth_sdt
-                                                and (
+                                                AND (
                                                     a.mth_edt >= s.service_edt
-                                                    or s.service_edt is null
+                                                    OR s.service_edt IS NULL
                                                 )
-                                                then a.mth_sdt
-                                        end
-                            end
+                                                THEN a.mth_sdt
+                                        END
+                            END
                         )
-                            as in_mth_days
-                    from
-                        {{ ref('AccrualHorizonCore') }} as a
-                    inner join
+                        AS in_mth_days
+                    FROM
+                        {{ ref('AccrualHorizonCore') }} AS a
+                    INNER JOIN
                         (
-                            select distinct
+                            SELECT DISTINCT
                                 rc.seq_product_item_id,
                                 rc.market_region,
                                 rc.market_sub_region,
@@ -235,60 +235,62 @@ with source_data as (
                                 rc.measure_name,
                                 rc.measure_code,
                                 rc.measure_unit,
-                                rc.ex_charge_desc as trans_description,
+                                rc.ex_charge_desc AS trans_description,
                                 rc.daily_amt,
                                 rc.daily_unit_quantity,
                                 rc.daily_unit_quantity_zr,
                                 rc.daily_disc_amt,
                                 rc.daily_ppd_amt,
                                 rc.daily_elig_ppd_amt,
-                                coalesce (sa.avg_daily_unit_quantity,
-                                rc.daily_unit_quantity)
-                                    as avg_daily_unit_quantity
-                            from
+                                coalesce(
+                                    sa.avg_daily_unit_quantity,
+                                    rc.daily_unit_quantity
+                                )
+                                AS avg_daily_unit_quantity
+                            FROM
                                 (
-                                    select * from {{ ref('RetailInvoiceCORE') }}
-                                    where
-                                        (bill_sdt_rnk = 1 or bill_edt_rnk = 1)
-                                        and bill_edt
+                                    SELECT * FROM {{ ref('RetailInvoiceCORE') }}
+                                    WHERE
+                                        (bill_sdt_rnk = 1 OR bill_edt_rnk = 1)
+                                        AND bill_edt
                                         <= '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}'
-                                ) as rc
-                            left join
-                                {{ ref('SeasonalAvgNBCORE') }} as sa
-                                on
+                                ) AS rc
+                            LEFT JOIN
+                                {{ ref('SeasonalAvgNBCORE') }} AS sa
+                                ON
                                     rc.record_hash = sa.record_hash
-                                    and rc.solar_zr = sa.solar_zr
-                                    and rc.cntrl_load = sa.cntrl_load
-                                    and rc.ex_charge_desc = sa.trans_description
-                                    and rc.measure_name = sa.measure_name
-                                    and rc.measure_code = sa.measure_code
-                        ) as s
-                        on
+                                    AND rc.solar_zr = sa.solar_zr
+                                    AND rc.cntrl_load = sa.cntrl_load
+                                    AND rc.ex_charge_desc = sa.trans_description
+                                    AND rc.measure_name = sa.measure_name
+                                    AND rc.measure_code = sa.measure_code
+                        ) AS s
+                        ON
                             (
                                 s.service_sdt <= a.mth_edt
-                                and s.service_edt >= a.mth_sdt
+                                AND s.service_edt >= a.mth_sdt
                             )
-                            and s.bill_edt <= a.mth_edt
-                    left join
-                        {{ ref('SeasonalAvgNBCORE') }} as sa
-                        on
+                            AND s.bill_edt <= a.mth_edt
+                    LEFT JOIN
+                        {{ ref('SeasonalAvgNBCORE') }} AS sa
+                        ON
                             sa.mth_no = a.mth_no
-                            and sa.market_sub_region = s.market_sub_region
-                            and sa.fuel_type = s.fuel_type
-                            and sa.market_region = s.market_region
-                            and sa.customer_segment = s.customer_segment
-                            and sa.solar_zr = s.solar_zr
-                            and sa.cntrl_load = s.cntrl_load
-                            and sa.trans_description = s.trans_description
-                            and sa.measure_name = s.measure_name
-                            and sa.measure_code = s.measure_code
-                ) as a
-            where in_mth_days is not null and in_mth_days > 0
-        ) as b
+                            AND sa.market_sub_region = s.market_sub_region
+                            AND sa.fuel_type = s.fuel_type
+                            AND sa.market_region = s.market_region
+                            AND sa.customer_segment = s.customer_segment
+                            AND sa.solar_zr = s.solar_zr
+                            AND sa.cntrl_load = s.cntrl_load
+                            AND sa.trans_description = s.trans_description
+                            AND sa.measure_name = s.measure_name
+                            AND sa.measure_code = s.measure_code
+                ) AS a
+            WHERE in_mth_days IS NOT NULL AND in_mth_days > 0
+        ) AS b
 )
 
-select *
-from source_data
+SELECT *
+FROM source_data
 
 /*
     Uncomment the line below to remove records with null `id` values
