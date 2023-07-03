@@ -137,7 +137,7 @@ WITH source_data AS (
                         ON b.bill_sdt <= a.mth_edt AND b.bill_edt >= a.mth_sdt
                     WHERE b.measure_name IS NOT NULL
                 ) AS a
-            WHERE in_mth_days IS NOT NULL
+            WHERE a.in_mth_days IS NOT NULL
         ) AS b
 )
 

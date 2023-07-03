@@ -21,7 +21,7 @@ WITH source_data AS (
         a.customer_type AS customer_segment,
         date_part('MONTH', a.service_sdt) AS mth_no
     FROM {{ ref('active_accounts_view') }} AS a
-    LEFT ANTI JOIN transient.registrycore AS rc ON rc.seq_product_item_id = a.account_id
+    LEFT ANTI JOIN {{ ref('RegistryCore') }} AS rc ON rc.seq_product_item_id = a.account_id
     WHERE a.service_sdt <= a.service_edt
 
 )

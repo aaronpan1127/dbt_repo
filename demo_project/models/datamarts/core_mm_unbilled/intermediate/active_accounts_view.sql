@@ -31,7 +31,7 @@ WITH source_data AS (
             commence_date,
             creation_date,
             curr_status_sid
-        FROM structured_core_mm.account
+        FROM {{ source('structured_core_mm', 'account') }}
         WHERE adh_active_flag = 1
         -- Considering account with commence_date populated
         AND commence_date IS NOT NULL

@@ -49,10 +49,10 @@ models:
   pre-hook:
       - "set ansi_mode = true"
       # - "SET spark.sql.variable.substitute=false"
-      - "insert into dbt_poc.audit (log_identifier,model, state, time) values ('{{invocation_id}}','{{this.name}}', 'start', getdate())"
+  #     - "insert into dbt_poc.audit (log_identifier,model, state, time) values ('{{invocation_id}}','{{this.name}}', 'start', getdate())"
 
-  post-hook:
-      - "insert into dbt_poc.audit (log_identifier,model, state, time) values ('{{invocation_id}}','{{this.name}}', 'end', getdate())"  
+  # post-hook:
+  #     - "insert into dbt_poc.audit (log_identifier,model, state, time) values ('{{invocation_id}}','{{this.name}}', 'end', getdate())"  
 
   dbt_artifacts:
     +schema: dbt_poc_audit # optional, default is your target schema  
@@ -65,10 +65,11 @@ models:
         +schema: default  
         +materialized: view
       position:
-        +schema: position_test
+        +schema: uc_test_aaron
       core_mm_unbilled:
         +schema: dbt_poc    
-        # +location_root: /mnt/datamart/dbt_poc/
+        intermediate:
+          +schema: dbt_poc_transient
 
 seeds:
   +file_format: delta # or hudi
@@ -78,7 +79,7 @@ snapshots:
 
 # Like the pre- and post- hooks above, the on-run-start and on-run-end configs
 # make it possible to run SQL at the very beginning, and very end of a dbt run.
-on-run-start:
-    - "create table if not exists dbt_poc.audit (log_identifier string, model string, state string, time timestamp)"
+# on-run-start:
+#     - "create table if not exists dbt_poc.audit (log_identifier string, model string, state string, time timestamp)"
 # on-run-end:
 #   - "{{ dbt_artifacts.upload_results(results) }}"

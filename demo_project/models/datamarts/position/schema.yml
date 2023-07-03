@@ -21,3 +21,15 @@ models:
           - not_null
           - accepted_values:
               values: ['1_5', '1_6', '1_7', '1_8']
+
+  - name: '1_1'
+    config:
+      contract:
+        enforced: true  
+    description: "1_1 model"
+    columns:
+      - name: id
+        description: "The primary key for 1_1 model"
+        data_type: int
+        constraints:
+          - type: not_null           

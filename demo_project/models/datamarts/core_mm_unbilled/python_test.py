@@ -7,7 +7,7 @@ def model(dbt, session):
     )
     df = dbt.ref("UnbilledAccrualResultSummary")
 
-    session.sql(f"""insert into dbt_poc.audit (log_identifier,model, state, time) values ('test','python_test', 'end', null)""")
+    # session.sql(f"""insert into dbt_poc.audit (log_identifier,model, state, time) values ('test','python_test', 'end', null)""")
 
     final_df = df.limit(500)
 

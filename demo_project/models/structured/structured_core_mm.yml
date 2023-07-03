@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: structured_core_mm
-    # database: uat  
+    database: hive_metastore  
     schema: structured_core_mm 
     description: CORE MM source tables in SCD2 format
     # loader: <string>

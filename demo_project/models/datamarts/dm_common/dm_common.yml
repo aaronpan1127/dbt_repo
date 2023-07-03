@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: dm_common
-    # database: uat  
+    database: hive_metastore  
     schema: dm_common  
     tables:
       - name: dim_date

@@ -79,9 +79,13 @@ WITH source_data AS (
             a.avg_daily_ppd_amt AS daily_ppd_amt,
             a.avg_daily_elig_ppd_amt AS daily_elig_ppd_amt,
             (a.account_number_count / a.record_count) AS factor,
-            -- Mutiplying by a factor to avg_daily values to rationalize the measures values for Never billed account, since the components in the bill are unknown for a never billed account.
-            -- Factor  = (No of distinct accounts in the seasonality profile data group,trans_description,measure_name,cntrl_load,solar_zr)/
-            --           (Total accounts in the seasonality profile data group,trans_description,measure_name,cntrl_load,solar_zr)
+            -- Mutiplying by a factor to avg_daily values to rationalize the measures values for Never billed account, 
+            -- since the components in the bill are unknown for a never billed account.
+            -- Factor  = 
+            -- (No of distinct accounts in the seasonality profile data group,trans_description,
+            -- measure_name,cntrl_load,solar_zr)/
+            -- (Total accounts in the seasonality profile data group,trans_description,
+            -- measure_name,cntrl_load,solar_zr)
             CASE
                 WHEN a.solar_zr = 'Y' THEN a.avg_daily_unit_quantity_zr
                 WHEN a.record_count = 0 THEN 0
@@ -189,7 +193,7 @@ WITH source_data AS (
                     ON m.record_hash = s.record_hash
             ) AS a
         WHERE
-            in_mth_days IS NOT NULL AND in_mth_days > 0
+            a.in_mth_days IS NOT NULL AND a.in_mth_days > 0
     ) AS t
 )
 

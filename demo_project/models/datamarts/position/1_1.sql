@@ -10,7 +10,7 @@
 
 WITH source_data AS (
 
-    SELECT '1_1' + 2 AS id
+    SELECT '2a' AS id
 
 )
 

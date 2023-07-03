@@ -21,7 +21,8 @@ WITH source_data AS (
     WHERE
         date_add(
             last_day(add_months(date, -1)), 1
-        ) BETWEEN '{{ var('Month_Start_Date','2022-04-01T00:00:00') }}' AND '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}'
+        ) BETWEEN '{{ var('Month_Start_Date','2022-04-01T00:00:00') }}'
+        AND '{{ var('UnbilledAccrualPeriodEndDate','2023-04-30T00:00:00') }}'
 )
 
 SELECT *
