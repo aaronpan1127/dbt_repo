@@ -82,4 +82,4 @@ snapshots:
 # on-run-start:
 #     - "create table if not exists dbt_poc.audit (log_identifier string, model string, state string, time timestamp)"
 on-run-end:
-  - "{{ dbt_artifacts.upload_results(results) }}"
+  # - "{{ dbt_artifacts.upload_results(results) }}"
