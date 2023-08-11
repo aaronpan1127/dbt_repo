@@ -13,8 +13,8 @@ demo_project:
     dev_pipeline:
       catalog: dev
       host: adb-3881115180254026.6.azuredatabricks.net   #dev pipeline 
-      # http_path: sql/protocolv1/o/3881115180254026/0928-012617-credo999  #dev pipeline - devCluster
-      http_path: sql/protocolv1/o/3881115180254026/0518-030501-wm1m5tx3    #dev pipeline - Unity Catalog trial       
+      http_path: sql/protocolv1/o/3881115180254026/0928-012617-credo999  #dev pipeline - devCluster
+      # http_path: sql/protocolv1/o/3881115180254026/0518-030501-wm1m5tx3    #dev pipeline - Unity Catalog trial       
       token: "{{ env_var('DBT_ACCESS_TOKEN') }}"         
       schema: default 
       threads: 5
