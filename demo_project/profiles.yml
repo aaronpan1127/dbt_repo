@@ -10,7 +10,7 @@ demo_project:
       retry_all: true
       connect_retries: 2
       type: databricks
-    dev_pipeline:
+    dev:
       catalog: dev
       host: adb-3881115180254026.6.azuredatabricks.net   #dev pipeline 
       # http_path: sql/protocolv1/o/3881115180254026/0928-012617-credo999  #dev pipeline - devCluster
