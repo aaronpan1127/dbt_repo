@@ -17,7 +17,7 @@ WITH final AS (
     FROM {{ ref('1_2') }}
     UNION
     SELECT id
-    FROM {{ source('structured_core_mm','account_abc') }}
+    FROM {{ source('structured_core_mm','accountabc') }}
 
 )
 
