@@ -41,4 +41,4 @@ demo_project:
       retry_all: true
       connect_retries: 2
       type: databricks        
-  target: dev_pipeline
+  target: dev
